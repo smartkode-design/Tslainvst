@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
 import { ArrowRight, Zap, Globe, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default function AppOnboarding() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -43,7 +44,7 @@ export default function AppOnboarding() {
   }, [slides.length]);
 
   return (
-    <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-transparent relative selection:bg-primary/30">
+    <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-slate-50 dark:bg-[#080c14] text-slate-900 dark:text-slate-100 relative selection:bg-primary/30 transition-colors duration-200">
       
       {/* Dynamic Background Glow based on current slide */}
       <div 
@@ -56,17 +57,20 @@ export default function AppOnboarding() {
       </div>
 
       {/* Grid lines background */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000003_1px,transparent_1px),linear-gradient(to_bottom,#00000003_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none -z-10" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000005_1px,transparent_1px),linear-gradient(to_bottom,#00000005_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none -z-10" />
 
       {/* Header - Minimal Native App Style */}
       <header className="w-full p-6 flex justify-between items-center relative z-20">
         <div className="flex items-center gap-2">
           <Logo className="h-8 w-8" />
-          <span className="text-xl font-black tracking-tight text-slate-900">TSLA</span>
+          <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white">TSLA</span>
         </div>
-        <Link href="/dashboard" className="text-sm font-bold text-slate-500 hover:text-primary transition-colors">
-          Skip
-        </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <Link href="/dashboard" className="text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-white transition-colors">
+            Skip
+          </Link>
+        </div>
       </header>
 
       {/* Main Slider Area */}
@@ -85,13 +89,13 @@ export default function AppOnboarding() {
               )}
             >
               {slide.icon}
-              <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-3 leading-[1.1] text-slate-900">
+              <h1 className="text-5xl md:text-6xl font-black tracking-tighter mb-3 leading-[1.1] text-slate-900 dark:text-white">
                 {slide.title} <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-indigo-600">
                   {slide.highlight}
                 </span>
               </h1>
-              <p className="text-base md:text-lg text-slate-500 font-bold max-w-sm mx-auto leading-relaxed">
+              <p className="text-base md:text-lg text-slate-500 dark:text-slate-400 font-bold max-w-sm mx-auto leading-relaxed">
                 {slide.description}
               </p>
             </div>
@@ -106,7 +110,7 @@ export default function AppOnboarding() {
               onClick={() => setCurrentSlide(index)}
               className={cn(
                 "h-1.5 rounded-full transition-all duration-500",
-                currentSlide === index ? "w-8 bg-primary" : "w-2 bg-slate-300 hover:bg-slate-400"
+                currentSlide === index ? "w-8 bg-primary" : "w-2 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400"
               )}
               aria-label={`Go to slide ${index + 1}`}
             />
@@ -116,17 +120,17 @@ export default function AppOnboarding() {
 
       {/* Fixed Bottom CTA Sheet (Native App Style) */}
       <div className="w-full p-6 pb-8 md:pb-10 z-20 relative animate-in slide-in-from-bottom-24 duration-1000 delay-300">
-        <div className="max-w-lg mx-auto bg-white/70 backdrop-blur-2xl border border-white rounded-[2rem] p-6 shadow-2xl shadow-slate-200/50">
+        <div className="max-w-lg mx-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/60 dark:border-slate-800 rounded-[2rem] p-6 shadow-2xl shadow-slate-900/10">
           <div className="mb-4 text-center">
-            <h2 className="text-xl font-black text-slate-900">Get Started</h2>
-            <p className="text-sm font-bold text-slate-500">Enter your email to join TSLA</p>
+            <h2 className="text-xl font-black text-slate-900 dark:text-white">Get Started</h2>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400">Enter your email to join TSLA</p>
           </div>
           
           <div className="flex flex-col gap-3">
             <input 
               type="email" 
               placeholder="name@example.com" 
-              className="w-full h-14 px-5 bg-white/50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 placeholder:text-slate-400 font-bold outline-none transition-all"
+              className="w-full h-14 px-5 bg-white/60 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 font-bold outline-none transition-all"
             />
             <Button className="w-full h-14 text-base rounded-2xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/30 transition-transform active:scale-95 font-bold border-0" asChild>
               <Link href="/register">
@@ -136,8 +140,8 @@ export default function AppOnboarding() {
             </Button>
           </div>
           
-          <p className="text-xs text-center font-bold text-slate-400 mt-5">
-            By continuing, you agree to our <span className="text-slate-600 underline cursor-pointer">Terms</span> and <span className="text-slate-600 underline cursor-pointer">Privacy Policy</span>.
+          <p className="text-xs text-center font-bold text-slate-400 dark:text-slate-500 mt-5">
+            By continuing, you agree to our <span className="text-slate-600 dark:text-slate-300 underline cursor-pointer">Terms</span> and <span className="text-slate-600 dark:text-slate-300 underline cursor-pointer">Privacy Policy</span>.
           </p>
         </div>
       </div>

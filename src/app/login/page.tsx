@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
 import { ArrowRight, Lock, Mail, ShieldCheck, Zap } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-white selection:bg-primary/30">
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-white dark:bg-[#080c14] text-slate-900 dark:text-slate-100 selection:bg-primary/30 transition-colors duration-200">
       
       {/* LEFT PANE - Marketing / Branding (Hidden on mobile) */}
       <div className="hidden md:flex w-1/2 lg:w-[45%] bg-slate-950 relative flex-col justify-between p-12 overflow-hidden">
@@ -20,7 +21,7 @@ export default function LoginPage() {
         </div>
 
         {/* Top Logo */}
-        <div className="relative z-10">
+        <div className="relative z-10 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group w-fit">
             <Logo className="h-10 w-10 text-white" />
             <span className="text-3xl font-black tracking-tight text-white">TSLA</span>
@@ -58,19 +59,24 @@ export default function LoginPage() {
       {/* RIGHT PANE - Form */}
       <div className="w-full md:w-1/2 lg:w-[55%] flex flex-col p-6 md:p-12 lg:px-24 justify-center relative overflow-y-auto">
         
-        {/* Mobile Logo (Only visible on small screens) */}
-        <div className="md:hidden flex items-center gap-3 mb-10">
-          <Logo className="h-8 w-8 text-primary" />
-          <span className="text-2xl font-black tracking-tight text-slate-900">TSLA</span>
+        {/* Top bar with theme toggle */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="md:hidden flex items-center gap-3">
+            <Logo className="h-8 w-8 text-primary" />
+            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">TSLA</span>
+          </div>
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
         </div>
 
         <div className="max-w-md w-full mx-auto md:mx-0">
           <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
               Welcome back <span className="text-2xl">👋</span>
             </h2>
-            <p className="text-slate-500 font-bold mt-2">
-              Don't have an account? <Link href="/register" className="text-primary hover:underline">Create one &rarr;</Link>
+            <p className="text-slate-500 dark:text-slate-400 font-bold mt-2">
+              Don't have an account? <Link href="/register" className="text-primary dark:text-indigo-400 hover:underline">Create one &rarr;</Link>
             </p>
           </div>
 
@@ -78,21 +84,29 @@ export default function LoginPage() {
             
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">Email Address</label>
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input type="email" placeholder="you@example.com" className="pl-11 h-14 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 focus-visible:border-primary font-medium text-base" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  <Input 
+                    type="email" 
+                    placeholder="you@example.com" 
+                    className="pl-11 h-14 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium text-base" 
+                  />
                 </div>
               </div>
 
               <div className="space-y-1.5 pt-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold text-slate-700">Password</label>
-                  <Link href="/forgot-password" className="text-xs font-bold text-primary hover:underline">Forgot password?</Link>
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Password</label>
+                  <Link href="/forgot-password" className="text-xs font-bold text-primary dark:text-indigo-400 hover:underline">Forgot password?</Link>
                 </div>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input type="password" placeholder="Enter your password" className="pl-11 h-14 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 focus-visible:border-primary font-medium text-base" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  <Input 
+                    type="password" 
+                    placeholder="Enter your password" 
+                    className="pl-11 h-14 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium text-base" 
+                  />
                 </div>
               </div>
             </div>

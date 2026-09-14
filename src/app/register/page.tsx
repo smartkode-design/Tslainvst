@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
 import { ArrowRight, Lock, Mail, User as UserIcon, Phone, ShieldCheck, Zap } from "lucide-react";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row bg-white selection:bg-primary/30">
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-white dark:bg-[#080c14] text-slate-900 dark:text-slate-100 selection:bg-primary/30 transition-colors duration-200">
       
       {/* LEFT PANE - Marketing / Branding (Hidden on mobile) */}
       <div className="hidden md:flex w-1/2 lg:w-[45%] bg-slate-950 relative flex-col justify-between p-12 overflow-hidden">
@@ -67,19 +68,24 @@ export default function RegisterPage() {
       {/* RIGHT PANE - Form */}
       <div className="w-full md:w-1/2 lg:w-[55%] flex flex-col p-6 md:p-12 lg:px-24 justify-center relative overflow-y-auto">
         
-        {/* Mobile Logo (Only visible on small screens) */}
-        <div className="md:hidden flex items-center gap-3 mb-10">
-          <Logo className="h-8 w-8 text-primary" />
-          <span className="text-2xl font-black tracking-tight text-slate-900">TSLA</span>
+        {/* Top bar with theme toggle */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="md:hidden flex items-center gap-3">
+            <Logo className="h-8 w-8 text-primary" />
+            <span className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">TSLA</span>
+          </div>
+          <div className="ml-auto">
+            <ThemeToggle />
+          </div>
         </div>
 
         <div className="max-w-md w-full mx-auto md:mx-0">
           <div className="mb-10">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
               Create account <span className="text-2xl">🚀</span>
             </h2>
-            <p className="text-slate-500 font-bold mt-2">
-              Already have one? <Link href="/login" className="text-primary hover:underline">Sign in &rarr;</Link>
+            <p className="text-slate-500 dark:text-slate-400 font-bold mt-2">
+              Already have one? <Link href="/login" className="text-primary dark:text-indigo-400 hover:underline">Sign in &rarr;</Link>
             </p>
           </div>
 
@@ -87,66 +93,89 @@ export default function RegisterPage() {
             
             {/* Section: Personal Info */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
-                <span className="text-xs font-black tracking-widest text-slate-400 uppercase">Personal Info</span>
+              <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className="text-xs font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase">Personal Info</span>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700">First Name</label>
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">First Name</label>
                   <div className="relative">
-                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input placeholder="John" className="pl-11 h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" />
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+                    <Input 
+                      placeholder="John" 
+                      className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" 
+                    />
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700">Last Name</label>
+                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Last Name</label>
                   <div className="relative">
-                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input placeholder="Doe" className="pl-11 h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" />
+                    <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+                    <Input 
+                      placeholder="Doe" 
+                      className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" 
+                    />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">Email Address</label>
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input type="email" placeholder="you@example.com" className="pl-11 h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  <Input 
+                    type="email" 
+                    placeholder="you@example.com" 
+                    className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" 
+                  />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">Phone Number</label>
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Phone Number</label>
                 <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input type="tel" placeholder="08012345678" className="pl-11 h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  <Input 
+                    type="tel" 
+                    placeholder="08012345678" 
+                    className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" 
+                  />
                 </div>
               </div>
             </div>
 
             {/* Section: Account Security */}
             <div className="space-y-4 pt-2">
-              <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
-                <span className="text-xs font-black tracking-widest text-slate-400 uppercase">Account Security</span>
+              <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className="text-xs font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase">Account Security</span>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">Password</label>
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input type="password" placeholder="Create a strong password" className="pl-11 h-12 rounded-xl bg-slate-50/50 border-slate-200 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  <Input 
+                    type="password" 
+                    placeholder="Create a strong password" 
+                    className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" 
+                  />
                 </div>
-                <p className="text-[11px] font-bold text-slate-400 mt-1">Min 6 chars · must include uppercase, lowercase, and a number</p>
+                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1">Min 6 chars · must include uppercase, lowercase, and a number</p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700">4-Digit Transaction PIN</label>
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">4-Digit Transaction PIN</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/60" />
-                  <Input type="password" maxLength={4} placeholder="Enter 4-digit PIN" className="pl-11 h-12 rounded-xl bg-primary/5 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary text-primary font-black tracking-[0.5em]" />
+                  <Input 
+                    type="password" 
+                    maxLength={4} 
+                    placeholder="Enter 4-digit PIN" 
+                    className="pl-11 h-12 rounded-xl bg-primary/5 dark:bg-primary/10 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary text-primary dark:text-indigo-400 font-black tracking-[0.5em]" 
+                  />
                 </div>
-                <p className="text-[11px] font-bold text-slate-400 mt-1">Used to authorise transactions — keep it secret</p>
+                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1">Used to authorise transactions — keep it secret</p>
               </div>
             </div>
 
@@ -158,8 +187,8 @@ export default function RegisterPage() {
                   <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
-              <p className="text-xs text-center font-bold text-slate-400 mt-6">
-                By registering, you agree to our <span className="text-slate-900 underline cursor-pointer">Terms of Service</span> and <span className="text-slate-900 underline cursor-pointer">Privacy Policy</span>.
+              <p className="text-xs text-center font-bold text-slate-400 dark:text-slate-500 mt-6">
+                By registering, you agree to our <span className="text-slate-900 dark:text-white underline cursor-pointer">Terms of Service</span> and <span className="text-slate-900 dark:text-white underline cursor-pointer">Privacy Policy</span>.
               </p>
             </div>
 

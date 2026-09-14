@@ -22,9 +22,9 @@ export default function OrdersPage() {
       date: "Today, 18:42",
       amount: "₦4,500.00",
       status: "Completed",
-      statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      statusColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
       icon: Store,
-      iconColor: "text-amber-500 bg-amber-50"
+      iconColor: "text-amber-500 bg-amber-50 dark:bg-amber-950/60"
     },
     {
       id: "ORD-88218",
@@ -34,9 +34,9 @@ export default function OrdersPage() {
       date: "Today, 14:15",
       amount: "₦3,625.00",
       status: "In Progress (68%)",
-      statusColor: "bg-blue-50 text-blue-700 border-blue-200",
+      statusColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
       icon: Zap,
-      iconColor: "text-purple-500 bg-purple-50"
+      iconColor: "text-purple-500 bg-purple-50 dark:bg-purple-950/60"
     },
     {
       id: "ORD-88217",
@@ -46,9 +46,9 @@ export default function OrdersPage() {
       date: "Yesterday, 21:05",
       amount: "₦1,200.00",
       status: "Completed",
-      statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      statusColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
       icon: Globe,
-      iconColor: "text-pink-500 bg-pink-50"
+      iconColor: "text-pink-500 bg-pink-50 dark:bg-pink-950/60"
     },
     {
       id: "ORD-88216",
@@ -58,9 +58,9 @@ export default function OrdersPage() {
       date: "Sep 12, 11:30",
       amount: "₦1,390.00",
       status: "Completed",
-      statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      statusColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
       icon: Wifi,
-      iconColor: "text-emerald-500 bg-emerald-50"
+      iconColor: "text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60"
     },
     {
       id: "ORD-88215",
@@ -70,9 +70,9 @@ export default function OrdersPage() {
       date: "Sep 10, 09:12",
       amount: "₦2,150.00",
       status: "Completed",
-      statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      statusColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
       icon: Store,
-      iconColor: "text-amber-500 bg-amber-50"
+      iconColor: "text-amber-500 bg-amber-50 dark:bg-amber-950/60"
     }
   ];
 
@@ -92,10 +92,10 @@ export default function OrdersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Order History</h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium">Track your social boosts, purchased accounts, and digital assets</p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">Order History</h1>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">Track your social boosts, purchased accounts, and digital assets</p>
         </div>
-        <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto">
+        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto">
           {[
             { id: "all", name: "All" },
             { id: "logs", name: "Buy Logs" },
@@ -107,7 +107,9 @@ export default function OrdersPage() {
               key={tab.id}
               onClick={() => setActiveFilter(tab.id)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                activeFilter === tab.id ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-900"
+                activeFilter === tab.id 
+                  ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs" 
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               {tab.name}
@@ -118,12 +120,12 @@ export default function OrdersPage() {
 
       {/* Search Input */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
         <Input 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search by Order ID or Service name..." 
-          className="pl-11 h-12 bg-white rounded-2xl border-slate-200 text-slate-900 placeholder:text-slate-400 text-sm shadow-xs"
+          className="pl-11 h-12 bg-white dark:bg-slate-900 rounded-2xl border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm shadow-xs"
         />
       </div>
 
@@ -135,8 +137,8 @@ export default function OrdersPage() {
 
           return (
             <div 
-              key={order.id}
-              className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs hover:shadow-md hover:border-slate-300 transition-all space-y-4"
+              key={order.id} 
+              className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all space-y-4"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-3">
@@ -145,25 +147,25 @@ export default function OrdersPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono font-bold text-slate-400 uppercase tracking-widest">{order.id}</span>
-                      <span className="text-slate-300">·</span>
-                      <span className="text-[11px] font-semibold text-slate-400">{order.date}</span>
+                      <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">{order.id}</span>
+                      <span className="text-slate-300 dark:text-slate-700">·</span>
+                      <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">{order.date}</span>
                     </div>
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900">{order.title}</h3>
+                    <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">{order.title}</h3>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
+                <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
                   <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${order.statusColor}`}>
                     {order.status}
                   </span>
-                  <span className="text-base font-black text-slate-900">{order.amount}</span>
+                  <span className="text-base font-black text-slate-900 dark:text-white">{order.amount}</span>
                 </div>
               </div>
 
               {/* Order Delivery Box / Credentials / Info */}
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                <div className="font-mono text-slate-700 break-all">
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/70 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div className="font-mono text-slate-700 dark:text-slate-300 break-all">
                   {order.category === "logs" && !isRevealed 
                     ? "••••••••••••••••••••••••••••••••••••••••••••" 
                     : order.details}
@@ -174,7 +176,7 @@ export default function OrdersPage() {
                     size="sm"
                     variant="outline"
                     onClick={() => toggleReveal(order.id)}
-                    className="h-8 px-3 rounded-xl text-[11px] font-bold shrink-0 bg-white border-slate-200"
+                    className="h-8 px-3 rounded-xl text-[11px] font-bold shrink-0 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
                   >
                     {isRevealed ? <EyeOff className="h-3.5 w-3.5 mr-1" /> : <Eye className="h-3.5 w-3.5 mr-1" />}
                     {isRevealed ? "Hide Credentials" : "View Credentials"}

@@ -111,14 +111,14 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col overflow-hidden relative">
         
         {/* Mobile Header - Ultra Minimal for Fintech App feel */}
-        <header className="md:hidden h-16 flex items-center justify-between px-4 z-30 pt-1 border-b border-slate-200/60 bg-white/80 backdrop-blur-md">
+        <header className="md:hidden h-16 flex items-center justify-between px-4 z-30 pt-1 border-b border-slate-200/60 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white text-xs font-black shadow-xs">
               OA
             </div>
             <div className="flex flex-col">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Good Evening</span>
-              <span className="text-sm font-black tracking-tight text-slate-900 leading-none">Oluwaseun 👋</span>
+              <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white leading-none">Oluwaseun 👋</span>
             </div>
           </div>
           

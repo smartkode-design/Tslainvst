@@ -40,18 +40,18 @@ export default function FundWalletPage() {
       <div className="flex items-center gap-3">
         <button 
           onClick={() => router.back()}
-          className="h-10 w-10 bg-white rounded-xl flex items-center justify-center border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors"
+          className="h-10 w-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
         >
-          <ArrowLeft className="h-5 w-5 text-slate-700" />
+          <ArrowLeft className="h-5 w-5 text-slate-700 dark:text-slate-200" />
         </button>
         <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Fund Wallet</h1>
-          <p className="text-xs text-slate-500 font-medium">Automatic instant deposit via dedicated virtual account</p>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Fund Wallet</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Automatic instant deposit via dedicated virtual account</p>
         </div>
       </div>
 
       {/* Balance Banner */}
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-3xl p-6 shadow-lg shadow-blue-900/10 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-3xl p-6 shadow-lg shadow-blue-900/10 flex items-center justify-between border border-blue-800/60">
         <div>
           <span className="text-[10px] font-bold uppercase tracking-widest text-blue-200">Current Balance</span>
           <div className="text-3xl font-black tracking-tight mt-0.5">₦248,500.00</div>
@@ -62,20 +62,20 @@ export default function FundWalletPage() {
         </div>
       </div>
 
-      {/* Fee Alert (Primex Reference) */}
-      <div className="flex items-center gap-3 p-4 bg-amber-50/80 border border-amber-200/70 rounded-2xl text-amber-800 text-xs font-medium">
-        <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+      {/* Fee Alert */}
+      <div className="flex items-center gap-3 p-4 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-800 text-amber-800 dark:text-amber-300 rounded-2xl text-xs font-medium">
+        <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
         <span>A processing fee of <strong>₦0</strong> will be deducted from your deposit. Zero fee on Palmpay transfers!</span>
       </div>
 
       {/* Gateway Selector Tabs */}
-      <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1.5 rounded-2xl">
+      <div className="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl">
         <button
           onClick={() => setSelectedGateway("palmpay")}
           className={`py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
             selectedGateway === "palmpay"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-900"
+              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           <div className="h-2 w-2 rounded-full bg-purple-600" />
@@ -85,8 +85,8 @@ export default function FundWalletPage() {
           onClick={() => setSelectedGateway("paga")}
           className={`py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
             selectedGateway === "paga"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-900"
+              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           <div className="h-2 w-2 rounded-full bg-blue-600" />
@@ -96,8 +96,8 @@ export default function FundWalletPage() {
           onClick={() => setSelectedGateway("bachs")}
           className={`py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 ${
             selectedGateway === "bachs"
-              ? "bg-white text-slate-900 shadow-sm"
-              : "text-slate-500 hover:text-slate-900"
+              ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           <Zap className="h-3 w-3 text-amber-500" />
@@ -105,27 +105,27 @@ export default function FundWalletPage() {
         </button>
       </div>
 
-      {/* Virtual Account Details Cards (Primex & SocialVault style) */}
+      {/* Virtual Account Details Cards */}
       {selectedGateway !== "bachs" ? (
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
               Permanent Dedicated Account
             </span>
-            <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-900/60">
               Instant Auto-Credit
             </span>
           </div>
 
           {/* Bank Name */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/60">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center border border-slate-200 text-primary shadow-xs">
+              <div className="h-10 w-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700 text-primary dark:text-indigo-400 shadow-xs">
                 <Building2 className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bank Name</p>
-                <p className="text-sm font-black text-slate-900">
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bank Name</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white">
                   {selectedGateway === "palmpay" ? "Palmpay" : "Paga (Monnify)"}
                 </p>
               </div>
@@ -134,22 +134,22 @@ export default function FundWalletPage() {
               size="sm"
               variant="outline"
               onClick={() => copyToClipboard(selectedGateway === "palmpay" ? "Palmpay" : "Paga", "bank")}
-              className="h-8 px-3 rounded-lg text-xs font-bold bg-white"
+              className="h-8 px-3 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
             >
-              {copiedField === "bank" ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 text-slate-400" />}
+              {copiedField === "bank" ? <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="h-3.5 w-3.5 text-slate-400" />}
               <span className="ml-1.5">{copiedField === "bank" ? "Copied" : "Copy"}</span>
             </Button>
           </div>
 
           {/* Account Number */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/60">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center border border-slate-200 text-blue-600 shadow-xs">
+              <div className="h-10 w-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 shadow-xs">
                 <Hash className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Account Number</p>
-                <p className="text-base font-black text-slate-900 tracking-wider">
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Account Number</p>
+                <p className="text-base font-black text-slate-900 dark:text-white font-mono tracking-wider">
                   {selectedGateway === "palmpay" ? "8920194821" : "3871401491"}
                 </p>
               </div>
@@ -158,84 +158,84 @@ export default function FundWalletPage() {
               size="sm"
               variant="outline"
               onClick={() => copyToClipboard(selectedGateway === "palmpay" ? "8920194821" : "3871401491", "account")}
-              className="h-8 px-3 rounded-lg text-xs font-bold bg-white"
+              className="h-8 px-3 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
             >
-              {copiedField === "account" ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 text-slate-400" />}
+              {copiedField === "account" ? <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="h-3.5 w-3.5 text-slate-400" />}
               <span className="ml-1.5">{copiedField === "account" ? "Copied" : "Copy"}</span>
             </Button>
           </div>
 
           {/* Account Name */}
-          <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/60">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center border border-slate-200 text-indigo-600 shadow-xs">
+              <div className="h-10 w-10 bg-white dark:bg-slate-800 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs">
                 <User className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Account Name</p>
-                <p className="text-sm font-black text-slate-900">TSLA - Oluwaseun A.</p>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Account Name</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white">TSLA - Oluwaseun A.</p>
               </div>
             </div>
             <Button
               size="sm"
               variant="outline"
               onClick={() => copyToClipboard("TSLA - Oluwaseun A.", "name")}
-              className="h-8 px-3 rounded-lg text-xs font-bold bg-white"
+              className="h-8 px-3 rounded-lg text-xs font-bold bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700"
             >
-              {copiedField === "name" ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5 text-slate-400" />}
+              {copiedField === "name" ? <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="h-3.5 w-3.5 text-slate-400" />}
               <span className="ml-1.5">{copiedField === "name" ? "Copied" : "Copy"}</span>
             </Button>
           </div>
         </div>
       ) : (
-        /* Bachs 60-Minute Dynamic Checkout (Bachs Reference in media_1789403548340.png) */
-        <div className="bg-white rounded-3xl border-2 border-primary/30 p-6 shadow-lg shadow-primary/5 space-y-5 animate-in fade-in duration-300">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        /* Bachs 60-Minute Dynamic Checkout */
+        <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-primary/30 dark:border-primary/40 p-6 shadow-lg shadow-primary/5 space-y-5 animate-in fade-in duration-300">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
-              <span className="text-xs font-black text-slate-900">Bachs Dynamic Checkout</span>
+              <span className="text-xs font-black text-slate-900 dark:text-white">Bachs Dynamic Checkout</span>
             </div>
-            <div className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/50">
+            <div className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-lg border border-amber-200/50 dark:border-amber-800/60">
               <Clock className="h-3.5 w-3.5" />
               <span>Expires in {formatTimer(bachsTimer)}</span>
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-            <p className="text-xs font-bold text-slate-500">Transfer exactly</p>
-            <div className="text-3xl font-black text-slate-900">₦5,000.00</div>
-            <p className="text-xs text-slate-400 font-medium">To the one-time bank account details below:</p>
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 space-y-3">
+            <p className="text-xs font-bold text-slate-500 dark:text-slate-400">Transfer exactly</p>
+            <div className="text-3xl font-black text-slate-900 dark:text-white">₦5,000.00</div>
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">To the one-time bank account details below:</p>
 
             <div className="pt-2 space-y-2 text-sm">
-              <div className="flex justify-between py-1.5 border-b border-slate-200/60">
-                <span className="font-semibold text-slate-500">Bank Name</span>
-                <span className="font-black text-slate-900">Bank78 MFB</span>
+              <div className="flex justify-between py-1.5 border-b border-slate-200/60 dark:border-slate-700/60">
+                <span className="font-semibold text-slate-500 dark:text-slate-400">Bank Name</span>
+                <span className="font-black text-slate-900 dark:text-white">Bank78 MFB</span>
               </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60">
-                <span className="font-semibold text-slate-500">Account Number</span>
+              <div className="flex justify-between items-center py-1.5 border-b border-slate-200/60 dark:border-slate-700/60">
+                <span className="font-semibold text-slate-500 dark:text-slate-400">Account Number</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-black text-base text-slate-900 tracking-wider">7540159105</span>
-                  <button onClick={() => copyToClipboard("7540159105", "bachs")} className="text-primary hover:underline text-xs font-bold">
+                  <span className="font-black text-base text-slate-900 dark:text-white font-mono tracking-wider">7540159105</span>
+                  <button onClick={() => copyToClipboard("7540159105", "bachs")} className="text-primary dark:text-indigo-400 hover:underline text-xs font-bold">
                     {copiedField === "bachs" ? "Copied" : "Copy"}
                   </button>
                 </div>
               </div>
               <div className="flex justify-between py-1.5">
-                <span className="font-semibold text-slate-500">Account Name</span>
-                <span className="font-black text-slate-900">Bachs Checkout - TSLA</span>
+                <span className="font-semibold text-slate-500 dark:text-slate-400">Account Name</span>
+                <span className="font-black text-slate-900 dark:text-white">Bachs Checkout - TSLA</span>
               </div>
             </div>
           </div>
 
-          <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-[11px] font-semibold text-rose-700">
+          <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/40 rounded-xl text-[11px] font-semibold text-rose-700 dark:text-rose-300">
             ⚠️ Do not save or reuse this account number. It expires automatically after this session.
           </div>
         </div>
       )}
 
-      {/* Instructions Card (Primex Reference) */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-4">
-        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">
+      {/* Instructions Card */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm space-y-4">
+        <h3 className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
           How to fund your wallet
         </h3>
         <div className="space-y-3">
@@ -246,10 +246,10 @@ export default function FundWalletPage() {
             "Your TSLA wallet balance will update automatically within 30 seconds."
           ].map((step, idx) => (
             <div key={idx} className="flex items-start gap-3">
-              <div className="h-5 w-5 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+              <div className="h-5 w-5 rounded-full bg-primary/10 dark:bg-primary/20 text-primary dark:text-indigo-400 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
                 {idx + 1}
               </div>
-              <p className="text-xs text-slate-600 font-medium leading-relaxed">{step}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium leading-relaxed">{step}</p>
             </div>
           ))}
         </div>
