@@ -93,11 +93,11 @@ export default function MarketplacePage() {
   });
 
   return (
-    <div className="space-y-6 pb-24 md:pb-12 max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="space-y-6 pb-24 md:pb-12 max-w-7xl mx-auto px-2 sm:px-6">
       {/* Page Header (SocialVault Style) */}
-      <div className="pt-2">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Products</h1>
-        <p className="text-sm font-medium text-slate-500 mt-1">
+      <div className="pt-1 sm:pt-2">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Products</h1>
+        <p className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">
           Discover and browse our premium social media account marketplace. Verified digital assets delivered instantly.
         </p>
       </div>
@@ -105,19 +105,19 @@ export default function MarketplacePage() {
       {/* Search & Filter Bar */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
           <Input 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search products..." 
-            className="pl-11 h-12 bg-white rounded-xl border-slate-200 text-slate-900 placeholder:text-slate-400 text-sm shadow-sm focus-visible:ring-primary/20 focus-visible:border-primary"
+            className="pl-11 h-12 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 text-sm shadow-xs focus-visible:ring-primary/20 focus-visible:border-primary"
           />
         </div>
         <Button 
           variant="outline" 
-          className="h-12 px-5 bg-white border-slate-200 rounded-xl font-semibold text-slate-700 hover:bg-slate-50 shadow-sm flex items-center gap-2"
+          className="h-12 px-5 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-xs flex items-center gap-2"
         >
-          <Filter className="h-4 w-4 text-slate-500" />
+          <Filter className="h-4 w-4 text-slate-500 dark:text-slate-400" />
           Filter
         </Button>
       </div>
@@ -128,15 +128,15 @@ export default function MarketplacePage() {
           <button
             key={cat.name}
             onClick={() => setActiveCategory(cat.name)}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shadow-sm ${
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap shadow-xs ${
               activeCategory === cat.name
                 ? "bg-primary text-white shadow-primary/20 shadow-md"
-                : "bg-white text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-slate-200/80"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200/80 dark:border-slate-800"
             }`}
           >
             <span>{cat.name}</span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-              activeCategory === cat.name ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+              activeCategory === cat.name ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
             }`}>
               {cat.count}
             </span>
@@ -149,7 +149,7 @@ export default function MarketplacePage() {
         {filteredProducts.map((product) => (
           <div 
             key={product.id} 
-            className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-md hover:border-slate-300 transition-all flex flex-col group"
+            className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col group"
           >
             {/* Full-Bleed Flag Header Image */}
             <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
@@ -158,7 +158,6 @@ export default function MarketplacePage() {
                 alt={product.platform} 
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
               />
-              {/* Dark Gradient Overlay for Badges readability */}
               <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/20 pointer-events-none" />
 
               {/* VN Badge (Top Left) */}
@@ -175,24 +174,22 @@ export default function MarketplacePage() {
 
             {/* Card Content */}
             <div className="p-4 flex flex-col flex-1">
-              {/* Platform Label */}
               <span className="text-xs font-bold text-amber-500 uppercase tracking-wide">
                 {product.platform}
               </span>
 
-              {/* Product Title */}
-              <h3 className="font-semibold text-slate-800 text-sm leading-snug line-clamp-3 mt-1.5 mb-4 group-hover:text-primary transition-colors">
+              <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-sm leading-snug line-clamp-3 mt-1.5 mb-4 group-hover:text-primary dark:group-hover:text-indigo-400 transition-colors">
                 {product.title}
               </h3>
 
               {/* Price & Buy Action */}
-              <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-lg font-extrabold text-slate-900 tracking-tight">
+              <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <span className="text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
                   {product.price}
                 </span>
                 <Button 
                   size="sm" 
-                  className="h-9 px-4 bg-slate-900 hover:bg-primary text-white font-bold text-xs rounded-xl shadow-sm transition-transform active:scale-95 flex items-center gap-1.5"
+                  className="h-9 px-4 bg-slate-900 dark:bg-white hover:bg-primary dark:hover:bg-primary text-white dark:text-slate-950 dark:hover:text-white font-bold text-xs rounded-xl shadow-xs transition-transform active:scale-95 flex items-center gap-1.5"
                 >
                   <ShoppingBag className="h-3.5 w-3.5" />
                   Buy

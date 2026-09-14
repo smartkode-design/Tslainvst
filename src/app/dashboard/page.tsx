@@ -17,43 +17,43 @@ export default function DashboardOverview() {
       icon: Globe, 
       label: "Virtual Number", 
       href: "/dashboard/services/virtual-no", 
-      iconColor: "text-blue-600",
-      bgColor: "bg-blue-50 hover:bg-blue-100/80" 
+      iconColor: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100/80 dark:hover:bg-blue-900/50" 
     },
     { 
       icon: Zap, 
       label: "Boost Account", 
       href: "/dashboard/services/boost-socials", 
-      iconColor: "text-purple-600",
-      bgColor: "bg-purple-50 hover:bg-purple-100/80" 
+      iconColor: "text-purple-600 dark:text-purple-400",
+      bgColor: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100/80 dark:hover:bg-purple-900/50" 
     },
     { 
       icon: Store, 
       label: "Buy Logs", 
       href: "/marketplace", 
-      iconColor: "text-emerald-600",
-      bgColor: "bg-emerald-50 hover:bg-emerald-100/80" 
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/50" 
     },
     { 
       icon: Smartphone, 
       label: "Buy Airtime", 
       href: "/dashboard/services/buy-airtime", 
-      iconColor: "text-amber-600",
-      bgColor: "bg-amber-50 hover:bg-amber-100/80" 
+      iconColor: "text-amber-600 dark:text-amber-400",
+      bgColor: "bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100/80 dark:hover:bg-amber-900/50" 
     },
     { 
       icon: Wifi, 
       label: "Buy Data", 
       href: "/dashboard/services/buy-data", 
-      iconColor: "text-teal-600",
-      bgColor: "bg-teal-50 hover:bg-teal-100/80" 
+      iconColor: "text-teal-600 dark:text-teal-400",
+      bgColor: "bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100/80 dark:hover:bg-teal-900/50" 
     },
     { 
       icon: ShieldCheck, 
       label: "Get Affiliate Site", 
       href: "/dashboard/services/affiliate-site", 
-      iconColor: "text-indigo-600",
-      bgColor: "bg-indigo-50 hover:bg-indigo-100/80" 
+      iconColor: "text-indigo-600 dark:text-indigo-400",
+      bgColor: "bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100/80 dark:hover:bg-indigo-900/50" 
     },
   ];
 
@@ -69,23 +69,23 @@ export default function DashboardOverview() {
       {/* Top Greeting */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Hi, Oluwaseun 👋
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
             Your personal digital trade overview
           </p>
         </div>
-        <Link href="/dashboard/transactions" className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 bg-white border border-slate-200/80 px-3.5 py-2 rounded-xl shadow-2xs transition-colors">
-          <History className="h-3.5 w-3.5 text-slate-400" />
+        <Link href="/dashboard/transactions" className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 px-3.5 py-2 rounded-xl shadow-2xs transition-colors">
+          <History className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
           <span>Statement</span>
         </Link>
       </div>
 
-      {/* Main Balance Hero Card (Clean, Luxurious Sapphire Navy) */}
-      <div className="bg-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-950/10 relative overflow-hidden border border-slate-900">
+      {/* Main Balance Hero Card (Clean, Luxurious Sapphire Obsidian) */}
+      <div className="bg-slate-950 dark:bg-slate-900/90 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-950/20 relative overflow-hidden border border-slate-900 dark:border-slate-800">
         {/* Subtle, soft ambient glow */}
-        <div className="absolute right-0 top-0 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute right-0 top-0 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="space-y-2">
@@ -137,8 +137,8 @@ export default function DashboardOverview() {
       {/* Quick Actions (Uncluttered, Native App Grid) */}
       <div className="space-y-3.5">
         <div className="flex items-center justify-between px-1">
-          <h2 className="font-extrabold text-base sm:text-lg text-slate-900 tracking-tight">Quick Actions</h2>
-          <Link href="/dashboard/services" className="text-xs font-bold text-primary hover:underline flex items-center gap-0.5">
+          <h2 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">Quick Actions</h2>
+          <Link href="/dashboard/services" className="text-xs font-bold text-primary dark:text-indigo-400 hover:underline flex items-center gap-0.5">
             View all <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>
@@ -148,11 +148,11 @@ export default function DashboardOverview() {
             const Icon = service.icon;
             return (
               <Link key={i} href={service.href} className="group">
-                <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-white border border-slate-200/70 hover:border-slate-300 hover:shadow-sm transition-all duration-200 gap-2.5">
+                <div className="flex flex-col items-center text-center p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm transition-all duration-200 gap-2.5">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 duration-200 ${service.bgColor}`}>
                     <Icon className={`h-6 w-6 ${service.iconColor}`} strokeWidth={2.2} />
                   </div>
-                  <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900 leading-tight">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white leading-tight">
                     {service.label}
                   </span>
                 </div>
@@ -163,35 +163,37 @@ export default function DashboardOverview() {
       </div>
 
       {/* Recent Transactions (Clean, Uncluttered Ledger) */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h3 className="font-extrabold text-slate-900 text-base tracking-tight">Recent Activity</h3>
-            <p className="text-xs text-slate-400 font-medium">Your latest wallet movements</p>
+            <h3 className="font-extrabold text-slate-900 dark:text-white text-base tracking-tight">Recent Activity</h3>
+            <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Your latest wallet movements</p>
           </div>
-          <Link href="/dashboard/transactions" className="text-xs font-bold text-primary hover:underline">
+          <Link href="/dashboard/transactions" className="text-xs font-bold text-primary dark:text-indigo-400 hover:underline">
             See all
           </Link>
         </div>
 
-        <div className="divide-y divide-slate-100">
+        <div className="divide-y divide-slate-100 dark:divide-slate-800">
           {recentTransactions.map((trx) => (
             <div key={trx.id} className="py-3.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3 group">
               <div className="flex items-center gap-3.5 overflow-hidden">
                 <div className={`h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                  trx.type === 'credit' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-700'
+                  trx.type === 'credit' 
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400' 
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                 }`}>
                   {trx.type === 'credit' ? <ArrowDownRight className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-xs sm:text-sm text-slate-900 truncate group-hover:text-primary transition-colors">
+                  <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-200 truncate group-hover:text-primary dark:group-hover:text-indigo-400 transition-colors">
                     {trx.desc}
                   </p>
-                  <p className="text-[11px] font-medium text-slate-400">{trx.date}</p>
+                  <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500">{trx.date}</p>
                 </div>
               </div>
               <span className={`text-xs sm:text-sm font-black shrink-0 ${
-                trx.type === 'credit' ? 'text-emerald-600' : 'text-slate-900'
+                trx.type === 'credit' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'
               }`}>
                 {trx.amount}
               </span>

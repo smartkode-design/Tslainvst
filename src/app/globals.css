@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -27,24 +29,20 @@
 @layer base {
   :root {
     /* 
-      SENIOR UI/UX ART DIRECTION: Clean, Crisp Fintech Light Theme
-      Like Kuda or OPay (White/Off-white)
+      EXECUTIVE LIGHT FINTECH THEME (Clean, Crisp, High-Contrast)
     */
     --background: #f8fafc; /* Crisp Slate 50 */
     --foreground: #0f172a; /* Deep Slate 900 */
     
-    /* Solid crisp white cards */
     --card: #ffffff;
     --card-foreground: #0f172a;
     
     --muted: #f1f5f9;
     --muted-foreground: #64748b;
     
-    /* Clean borders */
     --border: #e2e8f0;
     
-    /* Primary Indigo */
-    --primary: #4f46e5; 
+    --primary: #4f46e5; /* Electric Indigo */
     --primary-foreground: #ffffff;
     
     --accent: #f97316;
@@ -55,6 +53,32 @@
     --danger: #ef4444;
     
     --radius: 1.5rem;
+  }
+
+  .dark {
+    /* 
+      OBSIDIAN LUXURY DARK THEME (Raycast / Linear / SocialVault aesthetic)
+    */
+    --background: #080c14; /* Deep Obsidian Slate */
+    --foreground: #f8fafc; /* Crisp Clean White */
+    
+    --card: #0f172a; /* Sleek Deep Slate 900 */
+    --card-foreground: #f8fafc;
+    
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+    
+    --border: #1e293b; /* Subtle dark slate border */
+    
+    --primary: #6366f1; /* Vivid Indigo Glow */
+    --primary-foreground: #ffffff;
+    
+    --accent: #f97316;
+    --accent-foreground: #ffffff;
+    
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
   }
 }
 
@@ -69,9 +93,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    
-    /* Clean solid background for native app feel */
-    background-image: none;
+    transition: background-color 0.25s ease, color 0.25s ease;
   }
   
   /* Typography classes */
@@ -90,4 +112,52 @@
   .text-label {
     @apply text-sm font-medium tracking-wide text-muted-foreground uppercase;
   }
+}
+
+/* Eye-Catchy Ambient Background Mesh & Dot Matrix */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.ambient-dot-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.dark .ambient-dot-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+}
+
+.ambient-glow-1 {
+  position: absolute;
+  top: -15%;
+  right: -10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0) 70%);
+  filter: blur(60px);
+}
+
+.dark .ambient-glow-1 {
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 70%);
+}
+
+.ambient-glow-2 {
+  position: absolute;
+  top: 30%;
+  left: -15%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.06) 0%, rgba(14, 165, 233, 0) 70%);
+  filter: blur(60px);
+}
+
+.dark .ambient-glow-2 {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.12) 0%, rgba(14, 165, 233, 0) 70%);
 }
