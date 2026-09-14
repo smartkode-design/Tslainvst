@@ -59,6 +59,12 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   const [affiliateSubmitted, setAffiliateSubmitted] = useState(false);
 
   useEffect(() => {
+    if (slug.includes("log")) {
+      router.replace("/marketplace");
+    }
+  }, [slug, router]);
+
+  useEffect(() => {
     let interval: NodeJS.Timeout;
     if (hasGeneratedNumber && smsTimer > 0) {
       interval = setInterval(() => setSmsTimer((prev) => prev - 1), 1000);
