@@ -919,9 +919,9 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { ext: ".com", price: "₦150,000", tag: "Global reach" },
-                { ext: ".ng", price: "₦120,000", tag: "Nigeria focused" },
-                { ext: ".com.ng", price: "₦120,000", tag: "Best of both" },
+                { ext: ".com", price: "₦400,000", tag: "Global reach" },
+                { ext: ".ng", price: "₦360,000", tag: "Nigeria focused" },
+                { ext: ".com.ng", price: "₦320,000", tag: "Best of both" },
               ].map((domain) => (
                 <div 
                   key={domain.ext}

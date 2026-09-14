@@ -54,7 +54,7 @@ export default function ServicesHubPage() {
           icon: ShieldCheck,
           color: "from-blue-600 to-indigo-700",
           shadow: "shadow-blue-500/20",
-          price: "₦150,000 one-time"
+          price: "From ₦320,000"
         },
       ]
     },

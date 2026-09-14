@@ -18,7 +18,7 @@ export default function SupportPage() {
     { q: "How long does automated wallet funding take?", a: "Bank transfers to your dedicated Palmpay or Paga virtual account are credited automatically within 10 to 30 seconds." },
     { q: "What happens if I don't receive an SMS on my Virtual Number?", a: "If no SMS is received within the 20-minute session, your wallet is 100% automatically refunded immediately." },
     { q: "How do I access my purchased Facebook 2FA or VPN account?", a: "Go to your Orders page and tap 'View Credentials' to instantly copy your email, password, and 2FA secret key." },
-    { q: "Can I buy a white-label affiliate website?", a: "Yes! Submit an application under Affiliate Site. We build and connect your custom domain to our backend APIs for ₦150,000." },
+    { q: "Can I buy a white-label affiliate website?", a: "Yes! Submit an application under Affiliate Site. We build and connect your custom domain to our backend APIs starting from ₦320,000." },
   ];
 
   return (
