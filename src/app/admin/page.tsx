@@ -181,99 +181,112 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Users</p>
+              <div className="h-9 w-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/50 dark:border-indigo-800/40 flex items-center justify-center text-primary dark:text-indigo-400">
+                <Users className="h-4 w-4" />
+              </div>
             </div>
-            <h3 className="text-2xl font-bold">24,591</h3>
-            <p className="text-xs text-success flex items-center mt-1">
-              <ArrowUpRight className="h-3 w-3 mr-1" /> +12% from last month
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">24,591</h3>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center mt-1.5 font-bold">
+              <ArrowUpRight className="h-3.5 w-3.5 mr-1" /> +12% from last month
             </p>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-muted-foreground">Active Sellers</p>
-              <Store className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Sellers</p>
+              <div className="h-9 w-9 rounded-xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200/50 dark:border-sky-800/40 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                <Store className="h-4 w-4" />
+              </div>
             </div>
-            <h3 className="text-2xl font-bold">1,432</h3>
-            <p className="text-xs text-success flex items-center mt-1">
-              <ArrowUpRight className="h-3 w-3 mr-1" /> +4.2% from last month
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">1,432</h3>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center mt-1.5 font-bold">
+              <ArrowUpRight className="h-3.5 w-3.5 mr-1" /> +4.2% from last month
             </p>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-muted-foreground">Monthly Revenue</p>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Monthly Revenue</p>
+              <div className="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/50 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <CreditCard className="h-4 w-4" />
+              </div>
             </div>
-            <h3 className="text-2xl font-bold">₦5.2M</h3>
-            <p className="text-xs text-success flex items-center mt-1">
-              <ArrowUpRight className="h-3 w-3 mr-1" /> +18% from last month
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">₦5.2M</h3>
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center mt-1.5 font-bold">
+              <ArrowUpRight className="h-3.5 w-3.5 mr-1" /> +18% from last month
             </p>
           </CardContent>
         </Card>
-        <Card>
+
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-medium text-muted-foreground">Pending Withdrawals</p>
-              <ArrowDownRight className="h-4 w-4 text-muted-foreground" />
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Pending Orders</p>
+              <div className="h-9 w-9 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/50 dark:border-amber-800/40 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                <ArrowDownRight className="h-4 w-4" />
+              </div>
             </div>
-            <h3 className="text-2xl font-bold">42</h3>
-            <p className="text-xs text-warning flex items-center mt-1">
-              Requires attention
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">42</h3>
+            <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center mt-1.5 font-bold">
+              Auto-processing queue
             </p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue Overview</CardTitle>
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-black text-slate-900 dark:text-white">Revenue Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full">
+            <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={revenueData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
+                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `₦${value / 1000000}M`} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(value) => `₦${value / 1000000}M`} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                    itemStyle={{ color: 'hsl(var(--foreground))' }}
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', color: '#f8fafc' }}
+                    itemStyle={{ color: '#f8fafc' }}
                   />
-                  <Area type="monotone" dataKey="total" stroke="#3b82f6" fillOpacity={1} fill="url(#colorTotal)" />
+                  <Area type="monotone" dataKey="total" stroke="#6366f1" strokeWidth={2.5} fillOpacity={1} fill="url(#colorTotal)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Weekly Orders</CardTitle>
+        <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-black text-slate-900 dark:text-white">Weekly Orders Volume</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full">
+            <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={orderData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" opacity={0.3} />
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                    cursor={{fill: 'hsl(var(--muted))'}}
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b', borderRadius: '12px', color: '#f8fafc' }}
+                    cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                   />
-                  <Bar dataKey="orders" fill="#f97316" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="orders" fill="#f97316" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
