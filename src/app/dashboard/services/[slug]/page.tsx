@@ -192,9 +192,11 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   const otpServices = [
     { id: "whatsapp", name: "WhatsApp", icon: "🟢", startingPrice: "₦850", popular: true },
     { id: "telegram", name: "Telegram", icon: "✈️", startingPrice: "₦750", popular: true },
+    { id: "googlevoice", name: "Google Voice", icon: "📞", startingPrice: "₦1,800", popular: true },
+    { id: "signal", name: "Signal Messenger", icon: "💬", startingPrice: "₦850", popular: true },
     { id: "openai", name: "OpenAI / ChatGPT", icon: "🤖", startingPrice: "₦950", popular: true },
-    { id: "tinder", name: "Tinder", icon: "🔥", startingPrice: "₦1,200", popular: false },
     { id: "google", name: "Google / Gmail", icon: "🔴", startingPrice: "₦900", popular: true },
+    { id: "tinder", name: "Tinder", icon: "🔥", startingPrice: "₦1,200", popular: false },
     { id: "tiktok", name: "TikTok", icon: "🎵", startingPrice: "₦800", popular: false },
     { id: "facebook", name: "Facebook", icon: "📘", startingPrice: "₦850", popular: false },
     { id: "twitter", name: "Twitter / X", icon: "🐦", startingPrice: "₦850", popular: false },
@@ -259,7 +261,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
               <span className="h-5 w-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-bold">1</span>
               Select Target Service
             </label>
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">8 Supported Apps</span>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{otpServices.length} Supported Apps</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
