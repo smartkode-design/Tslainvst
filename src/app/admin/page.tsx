@@ -1,10 +1,36 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Store, CreditCard, ShoppingBag, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { 
+  Users, Store, CreditCard, ShoppingBag, ArrowUpRight, ArrowDownRight,
+  Globe, Zap, ExternalLink, RefreshCw, Database, CheckCircle2, AlertCircle, ShieldCheck
+} from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { Button } from "@/components/ui/button";
 
 export default function AdminDashboard() {
+  const [providerStatus, setProviderStatus] = useState<any>(null);
+  const [loadingStatus, setLoadingStatus] = useState(true);
+
+  const fetchProviderStatus = async () => {
+    setLoadingStatus(true);
+    try {
+      const res = await fetch("/api/admin/providers/status");
+      const data = await res.json();
+      if (data.success) {
+        setProviderStatus(data.providers);
+      }
+    } catch (err) {
+      console.error("Failed to load provider status", err);
+    } finally {
+      setLoadingStatus(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProviderStatus();
+  }, []);
   const revenueData = [
     { name: 'Jan', total: 1200000 },
     { name: 'Feb', total: 2100000 },
@@ -27,9 +53,131 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight mb-1">Platform Overview</h1>
-        <p className="text-muted-foreground">High-level metrics and performance across TSLA.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight mb-1">Platform Overview</h1>
+          <p className="text-muted-foreground">High-level metrics, revenue, and live wholesale float tracking.</p>
+        </div>
+        <Button
+          onClick={fetchProviderStatus}
+          variant="outline"
+          size="sm"
+          className="self-start sm:self-auto gap-2 border-slate-200 dark:border-slate-800"
+          disabled={loadingStatus}
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${loadingStatus ? "animate-spin" : ""}`} />
+          Refresh Float
+        </Button>
+      </div>
+
+      {/* WHOLESALE PROVIDER FLOAT & AUTOMATION STATUS */}
+      <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/30 rounded-2xl p-5 text-white shadow-xl shadow-indigo-950/20 space-y-4">
+        <div className="flex items-center justify-between border-b border-indigo-500/20 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-3 w-3 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+            </span>
+            <span className="text-xs font-black uppercase tracking-wider text-indigo-200">
+              Live Wholesale API Float Engine
+            </span>
+          </div>
+          <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+            <ShieldCheck className="h-3 w-3" /> Auto-Pilot Active
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
+          {/* 5SIM Card */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-sky-400" />
+                <span className="text-xs font-bold text-slate-200">5SIM (Virtual Numbers)</span>
+              </div>
+              <span className="text-[10px] font-bold text-sky-300 bg-sky-400/10 px-2 py-0.5 rounded-full">
+                {providerStatus?.fivesim?.connected ? "Connected" : "Standby"}
+              </span>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-slate-400">Wholesale Float Balance</p>
+              <div className="text-2xl font-black font-mono text-white mt-0.5">
+                ${providerStatus?.fivesim?.data?.balance !== undefined ? Number(providerStatus.fivesim.data.balance).toFixed(2) : "0.00"} <span className="text-xs font-normal text-slate-400">USD</span>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1 truncate">
+                Account: {providerStatus?.fivesim?.data?.email || "Connected via Token"}
+              </p>
+            </div>
+            <a
+              href="https://5sim.net/payment"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-sky-300 hover:text-white bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/30 py-2 px-3 rounded-lg transition-colors w-full text-center"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Top Up 5SIM Float
+            </a>
+          </div>
+
+          {/* JAP Card */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-amber-400" />
+                <span className="text-xs font-bold text-slate-200">JAP (SMM Boosting)</span>
+              </div>
+              <span className="text-[10px] font-bold text-amber-300 bg-amber-400/10 px-2 py-0.5 rounded-full">
+                {providerStatus?.jap?.connected ? "Connected" : "Standby"}
+              </span>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-slate-400">Wholesale Float Balance</p>
+              <div className="text-2xl font-black font-mono text-white mt-0.5">
+                ${providerStatus?.jap?.data?.balance !== undefined ? Number(providerStatus.jap.data.balance).toFixed(2) : "0.00"} <span className="text-xs font-normal text-slate-400">USD</span>
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1 truncate">
+                Twitter ID: 9011 · Instagram · TikTok
+              </p>
+            </div>
+            <a
+              href="https://justanotherpanel.com/addfunds"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-amber-300 hover:text-white bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/30 py-2 px-3 rounded-lg transition-colors w-full text-center"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Top Up JAP Float
+            </a>
+          </div>
+
+          {/* Database Card */}
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-between space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Database className="h-4 w-4 text-emerald-400" />
+                <span className="text-xs font-bold text-slate-200">Supabase Engine</span>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-300 bg-emerald-400/10 px-2 py-0.5 rounded-full">
+                Live
+              </span>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-slate-400">Database Schema</p>
+              <div className="text-lg font-black text-white mt-0.5">
+                5 Tables Live
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1">
+                Profiles, Wallets, Transactions, Orders, Logs
+              </p>
+            </div>
+            <a
+              href="https://supabase.com/dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-emerald-300 hover:text-white bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30 py-2 px-3 rounded-lg transition-colors w-full text-center"
+            >
+              <ExternalLink className="h-3.5 w-3.5" /> Open Supabase Console
+            </a>
+          </div>
+        </div>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
