@@ -235,6 +235,11 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   if (slug.includes("virtual") || slug.includes("rent-number")) {
     const activeCountryObj = otpCountries.find(c => c.id === selectedOtpCountry) || otpCountries[0];
     const activeServiceObj = otpServices.find(s => s.id === selectedOtpService) || otpServices[0];
+    
+    // Dynamic order rate: prioritized by custom service price, falling back to country base rate
+    const serviceRate = dynamicPricing["sms_" + selectedOtpService] || parseInt(activeServiceObj.startingPrice.replace(/[^0-9]/g, "")) || 850;
+    const countryRate = dynamicPricing["country_" + selectedOtpCountry] || activeCountryObj.price || 1200;
+    const activeOrderRate = Math.max(serviceRate, countryRate);
 
     return (
       <div className="max-w-4xl mx-auto space-y-6 pb-24 md:pb-12 pt-2 md:pt-4 px-4">
@@ -341,7 +346,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
           {/* Action trigger */}
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Order: <strong className="text-slate-900 dark:text-white">{activeCountryObj.name} ({activeCountryObj.code})</strong> for <strong className="text-slate-900 dark:text-white">{activeServiceObj.name}</strong> · Rate: <strong className="text-primary dark:text-indigo-400">₦{activeCountryObj.price.toLocaleString()}</strong>
+              Order: <strong className="text-slate-900 dark:text-white">{activeCountryObj.name} ({activeCountryObj.code})</strong> for <strong className="text-slate-900 dark:text-white">{activeServiceObj.name}</strong> · Rate: <strong className="text-primary dark:text-indigo-400">₦{activeOrderRate.toLocaleString()}</strong>
             </div>
             <Button
               onClick={() => {
@@ -352,7 +357,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
               className="w-full sm:w-auto h-13 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/25 transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
               <Zap className="h-4 w-4" />
-              Generate Number (₦{activeCountryObj.price.toLocaleString()})
+              Generate Number (₦{activeOrderRate.toLocaleString()})
             </Button>
           </div>
         </div>

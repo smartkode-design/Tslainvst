@@ -7,7 +7,70 @@ import { Logo } from "@/components/ui/logo";
 import { ArrowRight, Lock, Mail, User as UserIcon, Phone, ShieldCheck, Zap } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
+
 export default function RegisterPage() {
+  const router = useRouter();
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [pin, setPin] = useState("");
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    if (!email || !password || !firstName) {
+      setErrorMessage("Please fill in your first name, email, and password.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMessage("Password must be at least 6 characters long.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const fullName = `${firstName} ${lastName}`.trim();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            phone: phoneNumber,
+            pin: pin || "1234",
+            role: "user",
+          },
+        },
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+
+      setSuccessMessage("Account created successfully! Redirecting to your dashboard...");
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "An unexpected error occurred during signup.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-white dark:bg-[#080c14] text-slate-900 dark:text-slate-100 selection:bg-primary/30 transition-colors duration-200">
       
@@ -80,7 +143,7 @@ export default function RegisterPage() {
         </div>
 
         <div className="max-w-md w-full mx-auto md:mx-0">
-          <div className="mb-10">
+          <div className="mb-8">
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
               Create account <span className="text-2xl">🚀</span>
             </h2>
@@ -89,30 +152,48 @@ export default function RegisterPage() {
             </p>
           </div>
 
-          <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+          {/* Feedback Messages */}
+          {errorMessage && (
+            <div className="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-sm font-bold animate-in fade-in">
+              {errorMessage}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mb-6 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-600 dark:text-emerald-400 text-sm font-bold animate-in fade-in">
+              {successMessage}
+            </div>
+          )}
+
+          <form className="space-y-6" onSubmit={handleRegister}>
             
             {/* Section: Personal Info */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">
+              <div className="flex items-center gap-2 mb-2 border-b border-slate-100 dark:border-slate-800 pb-2">
                 <span className="text-xs font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase">Personal Info</span>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">First Name</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">First Name</label>
                   <div className="relative">
                     <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
                     <Input 
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
                       placeholder="John" 
+                      required
                       className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" 
                     />
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Last Name</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Last Name</label>
                   <div className="relative">
                     <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
                     <Input 
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
                       placeholder="Doe" 
                       className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" 
                     />
@@ -121,23 +202,28 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <Input 
                     type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com" 
+                    required
                     className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" 
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Phone Number</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Phone Number</label>
                 <div className="relative">
                   <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <Input 
                     type="tel" 
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
                     placeholder="08012345678" 
                     className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" 
                   />
@@ -146,48 +232,64 @@ export default function RegisterPage() {
             </div>
 
             {/* Section: Account Security */}
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center gap-2 mb-4 border-b border-slate-100 dark:border-slate-800 pb-2">
+            <div className="space-y-4 pt-1">
+              <div className="flex items-center gap-2 mb-2 border-b border-slate-100 dark:border-slate-800 pb-2">
                 <span className="text-xs font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase">Account Security</span>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Password</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <Input 
                     type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Create a strong password" 
+                    required
                     className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium" 
                   />
                 </div>
-                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1">Min 6 chars · must include uppercase, lowercase, and a number</p>
+                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1">Min 6 characters</p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">4-Digit Transaction PIN</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">4-Digit Transaction PIN</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/60" />
                   <Input 
                     type="password" 
                     maxLength={4} 
-                    placeholder="Enter 4-digit PIN" 
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    placeholder="1234" 
                     className="pl-11 h-12 rounded-xl bg-primary/5 dark:bg-primary/10 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary text-primary dark:text-indigo-400 font-black tracking-[0.5em]" 
                   />
                 </div>
-                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1">Used to authorise transactions — keep it secret</p>
+                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1">Used to authorize withdrawals & purchases</p>
               </div>
             </div>
 
             {/* Action */}
-            <div className="pt-4">
-              <Button className="w-full h-14 text-base rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] font-bold border-0 flex items-center justify-center gap-2 group" asChild>
-                <Link href="/dashboard">
-                  Create Account
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
+            <div className="pt-2">
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full h-14 text-base rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] font-bold border-0 flex items-center justify-center gap-2 group"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    Creating Account...
+                  </span>
+                ) : (
+                  <>
+                    Create Account
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </Button>
-              <p className="text-xs text-center font-bold text-slate-400 dark:text-slate-500 mt-6">
+              <p className="text-xs text-center font-bold text-slate-400 dark:text-slate-500 mt-5">
                 By registering, you agree to our <span className="text-slate-900 dark:text-white underline cursor-pointer">Terms of Service</span> and <span className="text-slate-900 dark:text-white underline cursor-pointer">Privacy Policy</span>.
               </p>
             </div>

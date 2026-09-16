@@ -7,7 +7,50 @@ import { Logo } from "@/components/ui/logo";
 import { ArrowRight, Lock, Mail, ShieldCheck, Zap } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase/client";
+
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage("");
+
+    if (!email || !password) {
+      setErrorMessage("Please enter your email and password.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setErrorMessage(error.message);
+        return;
+      }
+
+      if (email.toLowerCase().includes("admin")) {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || "Failed to sign in.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row bg-white dark:bg-[#080c14] text-slate-900 dark:text-slate-100 selection:bg-primary/30 transition-colors duration-200">
       
@@ -71,7 +114,7 @@ export default function LoginPage() {
         </div>
 
         <div className="max-w-md w-full mx-auto md:mx-0">
-          <div className="mb-10">
+          <div className="mb-8">
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
               Welcome back <span className="text-2xl">👋</span>
             </h2>
@@ -80,16 +123,25 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <form className="space-y-8" onSubmit={(e) => e.preventDefault()}>
+          {errorMessage && (
+            <div className="mb-6 p-4 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-600 dark:text-rose-400 text-sm font-bold animate-in fade-in">
+              {errorMessage}
+            </div>
+          )}
+
+          <form className="space-y-6" onSubmit={handleLogin}>
             
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <Input 
                     type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com" 
+                    required
                     className="pl-11 h-14 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium text-base" 
                   />
                 </div>
@@ -97,14 +149,17 @@ export default function LoginPage() {
 
               <div className="space-y-1.5 pt-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Password</label>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Password</label>
                   <Link href="/forgot-password" className="text-xs font-bold text-primary dark:text-indigo-400 hover:underline">Forgot password?</Link>
                 </div>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
                   <Input 
                     type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password" 
+                    required
                     className="pl-11 h-14 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary font-medium text-base" 
                   />
                 </div>
@@ -112,12 +167,23 @@ export default function LoginPage() {
             </div>
 
             {/* Action */}
-            <div className="pt-4">
-              <Button className="w-full h-14 text-base rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] font-bold border-0 flex items-center justify-center gap-2 group" asChild>
-                <Link href="/dashboard">
-                  Sign In
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
+            <div className="pt-2">
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full h-14 text-base rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/20 transition-all active:scale-[0.98] font-bold border-0 flex items-center justify-center gap-2 group"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    Signing in...
+                  </span>
+                ) : (
+                  <>
+                    Sign In
+                    <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </Button>
             </div>
 
