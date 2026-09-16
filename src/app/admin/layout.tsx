@@ -18,7 +18,8 @@ import {
   BarChart,
   Shield,
   Settings,
-  FileText
+  FileText,
+  Sliders
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export default function AdminLayout({
 
   const navItems = [
     { name: "Overview", href: "/admin", icon: LayoutDashboard },
+    { name: "Price Mapping", href: "/admin/pricing", icon: Sliders },
     { name: "Users", href: "/admin/users", icon: Users },
     { name: "Sellers", href: "/admin/sellers", icon: Store },
     { name: "Products", href: "/admin/products", icon: Package },

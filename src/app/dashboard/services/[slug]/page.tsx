@@ -58,6 +58,24 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   const [notes, setNotes] = useState("");
   const [affiliateSubmitted, setAffiliateSubmitted] = useState(false);
 
+  // --- Dynamic Pricing from Admin ---
+  const [dynamicPricing, setDynamicPricing] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    fetch("/api/admin/pricing")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.pricing) {
+          const map: Record<string, number> = {};
+          data.pricing.forEach((item: any) => {
+            map[item.id] = Number(item.retailNGN);
+          });
+          setDynamicPricing(map);
+        }
+      })
+      .catch((err) => console.warn("Could not load dynamic pricing", err));
+  }, []);
+
   useEffect(() => {
     if (slug.includes("log")) {
       router.replace("/marketplace");
@@ -190,25 +208,25 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   // VIRTUAL NUMBER SERVICES & COUNTRIES DATA (OTPClouds Reference)
   // -------------------------------------------------------------
   const otpServices = [
-    { id: "whatsapp", name: "WhatsApp", icon: "🟢", startingPrice: "₦850", popular: true },
-    { id: "telegram", name: "Telegram", icon: "✈️", startingPrice: "₦750", popular: true },
-    { id: "googlevoice", name: "Google Voice", icon: "📞", startingPrice: "₦1,800", popular: true },
-    { id: "signal", name: "Signal Messenger", icon: "💬", startingPrice: "₦850", popular: true },
-    { id: "openai", name: "OpenAI / ChatGPT", icon: "🤖", startingPrice: "₦950", popular: true },
-    { id: "google", name: "Google / Gmail", icon: "🔴", startingPrice: "₦900", popular: true },
-    { id: "tinder", name: "Tinder", icon: "🔥", startingPrice: "₦1,200", popular: false },
-    { id: "tiktok", name: "TikTok", icon: "🎵", startingPrice: "₦800", popular: false },
-    { id: "facebook", name: "Facebook", icon: "📘", startingPrice: "₦850", popular: false },
-    { id: "twitter", name: "Twitter / X", icon: "🐦", startingPrice: "₦850", popular: false },
+    { id: "whatsapp", name: "WhatsApp", icon: "🟢", startingPrice: dynamicPricing["sms_whatsapp"] ? `₦${dynamicPricing["sms_whatsapp"].toLocaleString()}` : "₦850", popular: true },
+    { id: "telegram", name: "Telegram", icon: "✈️", startingPrice: dynamicPricing["sms_telegram"] ? `₦${dynamicPricing["sms_telegram"].toLocaleString()}` : "₦750", popular: true },
+    { id: "googlevoice", name: "Google Voice", icon: "📞", startingPrice: dynamicPricing["sms_googlevoice"] ? `₦${dynamicPricing["sms_googlevoice"].toLocaleString()}` : "₦1,800", popular: true },
+    { id: "signal", name: "Signal Messenger", icon: "💬", startingPrice: dynamicPricing["sms_signal"] ? `₦${dynamicPricing["sms_signal"].toLocaleString()}` : "₦850", popular: true },
+    { id: "openai", name: "OpenAI / ChatGPT", icon: "🤖", startingPrice: dynamicPricing["sms_openai"] ? `₦${dynamicPricing["sms_openai"].toLocaleString()}` : "₦950", popular: true },
+    { id: "google", name: "Google / Gmail", icon: "🔴", startingPrice: dynamicPricing["sms_google"] ? `₦${dynamicPricing["sms_google"].toLocaleString()}` : "₦900", popular: true },
+    { id: "tinder", name: "Tinder", icon: "🔥", startingPrice: dynamicPricing["sms_tinder"] ? `₦${dynamicPricing["sms_tinder"].toLocaleString()}` : "₦1,200", popular: false },
+    { id: "tiktok", name: "TikTok", icon: "🎵", startingPrice: dynamicPricing["sms_tiktok"] ? `₦${dynamicPricing["sms_tiktok"].toLocaleString()}` : "₦800", popular: false },
+    { id: "facebook", name: "Facebook", icon: "📘", startingPrice: dynamicPricing["sms_facebook"] ? `₦${dynamicPricing["sms_facebook"].toLocaleString()}` : "₦850", popular: false },
+    { id: "twitter", name: "Twitter / X", icon: "🐦", startingPrice: dynamicPricing["sms_twitter"] ? `₦${dynamicPricing["sms_twitter"].toLocaleString()}` : "₦850", popular: false },
   ];
 
   const otpCountries = [
-    { id: "us", name: "United States", code: "+1", flag: "https://flagcdn.com/w160/us.png", price: 1200, stock: "940 left" },
-    { id: "ng", name: "Nigeria", code: "+234", flag: "https://flagcdn.com/w160/ng.png", price: 850, stock: "1,420 left" },
-    { id: "gb", name: "United Kingdom", code: "+44", flag: "https://flagcdn.com/w160/gb.png", price: 1500, stock: "310 left" },
-    { id: "gh", name: "Ghana", code: "+233", flag: "https://flagcdn.com/w160/gh.png", price: 950, stock: "180 left" },
-    { id: "za", name: "South Africa", code: "+27", flag: "https://flagcdn.com/w160/za.png", price: 1100, stock: "450 left" },
-    { id: "ke", name: "Kenya", code: "+254", flag: "https://flagcdn.com/w160/ke.png", price: 900, stock: "220 left" },
+    { id: "us", name: "United States", code: "+1", flag: "https://flagcdn.com/w160/us.png", price: dynamicPricing["country_us"] || 1200, stock: "940 left" },
+    { id: "ng", name: "Nigeria", code: "+234", flag: "https://flagcdn.com/w160/ng.png", price: dynamicPricing["country_ng"] || 850, stock: "1,420 left" },
+    { id: "gb", name: "United Kingdom", code: "+44", flag: "https://flagcdn.com/w160/gb.png", price: dynamicPricing["country_gb"] || 1500, stock: "310 left" },
+    { id: "gh", name: "Ghana", code: "+233", flag: "https://flagcdn.com/w160/gh.png", price: dynamicPricing["country_gh"] || 950, stock: "180 left" },
+    { id: "za", name: "South Africa", code: "+27", flag: "https://flagcdn.com/w160/za.png", price: dynamicPricing["country_za"] || 1100, stock: "450 left" },
+    { id: "ke", name: "Kenya", code: "+254", flag: "https://flagcdn.com/w160/ke.png", price: dynamicPricing["country_ke"] || 900, stock: "220 left" },
   ];
 
   // -------------------------------------------------------------
