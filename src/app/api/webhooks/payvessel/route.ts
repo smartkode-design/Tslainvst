@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { PayvesselService } from "@/lib/providers/payvessel";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();

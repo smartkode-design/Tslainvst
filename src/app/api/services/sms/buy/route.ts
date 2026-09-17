@@ -3,6 +3,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { FiveSimService } from "@/lib/providers/fivesim";
 import { DEFAULT_PRICING, calculateSmsPrice, isServiceSupportedInCountry } from "@/lib/pricing";
 
+export const dynamic = "force-dynamic";
+
 // Calculate authoritative server price
 function getAuthoritativePrice(country: string, service: string): number {
   return calculateSmsPrice(service, country);
