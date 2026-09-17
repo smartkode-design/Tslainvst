@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Search, Filter, Globe, ShoppingBag, Check, Copy, ShieldCheck, 
@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase/client";
 
 interface Product {
   id: number;
@@ -27,6 +28,7 @@ export default function MarketplacePage() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
   // Buy Checkout Modal State
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -35,8 +37,27 @@ export default function MarketplacePage() {
   const [purchaseComplete, setPurchaseComplete] = useState(false);
   const [copiedCreds, setCopiedCreds] = useState(false);
 
+  // Fetch real wallet balance
+  useEffect(() => {
+    async function fetchBalance() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      if (!session) return;
+      const { data: wallet } = await supabase
+        .from("wallets")
+        .select("balance")
+        .eq("user_id", session.user.id)
+        .single();
+      setWalletBalance(Number(wallet?.balance ?? 0));
+    }
+    fetchBalance();
+  }, []);
+
+
+
   const categories = [
     { name: "All", icon: "🔥", count: 1840 },
+    { name: "Google Voice", icon: "📞", count: 76 },
     { name: "Facebook", icon: "📘", count: 420 },
     { name: "VPNs", icon: "🛡️", count: 190 },
     { name: "Google / Gmail", icon: "🔴", count: 512 },
@@ -48,6 +69,30 @@ export default function MarketplacePage() {
   ];
 
   const products: Product[] = [
+    {
+      id: 201,
+      flag: "https://flagcdn.com/w640/us.png",
+      country: "United States",
+      stock: 48,
+      platform: "GOOGLE VOICE",
+      category: "Google Voice",
+      title: "Google Voice (+1 USA) Aged 2023 · Clean IP + Gmail + Recovery",
+      priceNum: 5500,
+      price: "₦5,500",
+      details: "Gmail: gvoice_us992@gmail.com | Pass: Voice!2026Secure | Recovery: recov92@outlook.com | Voice#: +1 (415) 890-4122 | 2FA: JBSWY3DPEHPK3PXP"
+    },
+    {
+      id: 202,
+      flag: "https://flagcdn.com/w640/us.png",
+      country: "United States",
+      stock: 28,
+      platform: "GOOGLE VOICE",
+      category: "Google Voice",
+      title: "Google Voice (+1 USA Fresh) · High Carrier Trust + Full Access",
+      priceNum: 4200,
+      price: "₦4,200",
+      details: "Gmail: gv_fresh01@gmail.com | Pass: Fresh!Voice2026 | Recovery: fresh_rec@outlook.com | Voice#: +1 (646) 773-8910"
+    },
     {
       id: 1,
       flag: "https://flagcdn.com/w640/au.png",
@@ -245,7 +290,7 @@ export default function MarketplacePage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
           <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 shrink-0">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Wallet: ₦248,500.00</span>
+            <span>Wallet: {walletBalance === null ? "Loading..." : `₦${new Intl.NumberFormat("en-NG", { minimumFractionDigits: 2 }).format(walletBalance)}`}</span>
           </div>
           <div className="bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 shrink-0">
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
@@ -515,7 +560,9 @@ export default function MarketplacePage() {
                 <div className="space-y-2 pt-1">
                   <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
                     <span>Available Wallet Balance</span>
-                    <span className="font-bold text-slate-900 dark:text-white font-mono">₦248,500.00</span>
+                    <span className="font-bold text-slate-900 dark:text-white font-mono">
+                      {walletBalance === null ? "..." : `₦${new Intl.NumberFormat("en-NG", { minimumFractionDigits: 2 }).format(walletBalance)}`}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
                     <span>Rate (×{buyQuantity})</span>

@@ -4,14 +4,22 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Plus, ArrowUpRight, ArrowDownRight, Smartphone, Wifi, Zap, Globe, 
-  Store, Eye, EyeOff, ShieldCheck, ChevronRight, History 
+  Store, Eye, EyeOff, ShieldCheck, ChevronRight, History, Loader2
 } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "./layout";
+
+function formatNaira(amount: number): string {
+  return new Intl.NumberFormat("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
 
 export default function DashboardOverview() {
   const [showBalance, setShowBalance] = useState(true);
+  const { user, wallet, loading } = useAuth();
 
-  // Clean, cohesive service actions with soft elegant pastels (Primex style)
   const quickServices = [
     { 
       icon: Globe, 
@@ -57,12 +65,8 @@ export default function DashboardOverview() {
     },
   ];
 
-  const recentTransactions = [
-    { id: 1, type: "credit", amount: "+₦50,000.00", desc: "Automated Deposit · Palmpay", date: "Today, 10:24 AM" },
-    { id: 2, type: "debit", amount: "-₦3,680.00", desc: "Buy Logs · Facebook 2FA Account", date: "Today, 08:15 AM" },
-    { id: 3, type: "debit", amount: "-₦1,450.00", desc: "SMM Boost · 1,000 Instagram Followers", date: "Yesterday, 19:40 PM" },
-    { id: 4, type: "debit", amount: "-₦1,390.00", desc: "MTN Data · 5.0 GB Corporate", date: "Sep 12, 11:30 AM" },
-  ];
+  const balance = wallet?.balance ?? 0;
+  const [nairaWhole, nairaCents] = formatNaira(balance).split(".");
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-24 md:pb-12 pt-1 md:pt-4 px-2 sm:px-4">
@@ -70,7 +74,13 @@ export default function DashboardOverview() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Hi, Oluwaseun 👋
+            {loading ? (
+              <span className="inline-flex items-center gap-2 text-slate-400">
+                <Loader2 className="h-5 w-5 animate-spin" /> Loading...
+              </span>
+            ) : (
+              <>Hi, {user?.firstName} 👋</>
+            )}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium mt-0.5">
             Your personal digital trade overview
@@ -82,9 +92,9 @@ export default function DashboardOverview() {
         </Link>
       </div>
 
-      {/* Main Balance Hero Card (Clean, Luxurious Sapphire Obsidian) */}
+      {/* Main Balance Hero Card */}
       <div className="bg-slate-950 dark:bg-slate-900/90 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-950/20 relative overflow-hidden border border-slate-900 dark:border-slate-800">
-        {/* Subtle, soft ambient glow */}
+        {/* Ambient glow */}
         <div className="absolute right-0 top-0 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
@@ -105,8 +115,10 @@ export default function DashboardOverview() {
             </div>
 
             <div className="text-3xl sm:text-5xl font-black tracking-tight text-white font-mono">
-              {showBalance ? (
-                <>₦248,500<span className="text-slate-400 text-xl sm:text-3xl">.00</span></>
+              {loading ? (
+                <span className="text-slate-500 text-2xl sm:text-3xl animate-pulse">Loading...</span>
+              ) : showBalance ? (
+                <>₦{nairaWhole}<span className="text-slate-400 text-xl sm:text-3xl">.{nairaCents}</span></>
               ) : (
                 "••••••••••"
               )}
@@ -134,7 +146,7 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      {/* Quick Actions (Uncluttered, Native App Grid) */}
+      {/* Quick Actions */}
       <div className="space-y-3.5">
         <div className="flex items-center justify-between px-1">
           <h2 className="font-extrabold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">Quick Actions</h2>
@@ -162,7 +174,7 @@ export default function DashboardOverview() {
         </div>
       </div>
 
-      {/* Recent Transactions (Clean, Uncluttered Ledger) */}
+      {/* Recent Activity — Empty state for new users */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
@@ -174,33 +186,20 @@ export default function DashboardOverview() {
           </Link>
         </div>
 
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
-          {recentTransactions.map((trx) => (
-            <div key={trx.id} className="py-3.5 first:pt-1 last:pb-1 flex items-center justify-between gap-3 group">
-              <div className="flex items-center gap-3.5 overflow-hidden">
-                <div className={`h-10 w-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                  trx.type === 'credit' 
-                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400' 
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                }`}>
-                  {trx.type === 'credit' ? <ArrowDownRight className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-200 truncate group-hover:text-primary dark:group-hover:text-indigo-400 transition-colors">
-                    {trx.desc}
-                  </p>
-                  <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500">{trx.date}</p>
-                </div>
-              </div>
-              <span className={`text-xs sm:text-sm font-black shrink-0 ${
-                trx.type === 'credit' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'
-              }`}>
-                {trx.amount}
-              </span>
-            </div>
-          ))}
+        <div className="flex flex-col items-center justify-center py-10 gap-3">
+          <div className="h-14 w-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+            <History className="h-6 w-6 text-slate-400" />
+          </div>
+          <p className="text-sm font-bold text-slate-500 dark:text-slate-400">No transactions yet</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Fund your wallet to get started</p>
+          <Link href="/dashboard/wallet/fund">
+            <Button size="sm" className="mt-1 rounded-xl font-bold text-xs h-9 px-5">
+              <Plus className="h-3.5 w-3.5 mr-1.5" /> Fund Wallet
+            </Button>
+          </Link>
         </div>
       </div>
     </div>
   );
 }
+

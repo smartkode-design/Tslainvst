@@ -6,17 +6,25 @@ import {
   ArrowLeft, CheckCircle2, ChevronDown, Smartphone, Globe, ShieldCheck, Zap, 
   Copy, Clock, MessageSquare, Check, Wifi, Tv, Contact, Sparkles, AlertCircle,
   Radio, CheckCircle, Shield, ArrowRight, Flame, HelpCircle, Layers, Star,
-  TrendingUp, RefreshCw, Info, ExternalLink, ShieldAlert, BadgeCheck
+  TrendingUp, RefreshCw, Info, ExternalLink, ShieldAlert, BadgeCheck,
+  Search, X
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+import { useAuth } from "../../layout";
+import { calculateSmsPrice, isServiceSupportedInCountry } from "@/lib/pricing";
 
 export default function ServicePage({ params }: { params: { slug: string } }) {
   const router = useRouter();
   const pathname = usePathname();
   const rawSlug = pathname.split('/').pop() || "";
   const slug = rawSlug.toLowerCase();
+  const { user, wallet } = useAuth();
+  const formattedBalance = new Intl.NumberFormat("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(wallet?.balance ?? 0);
 
   // --- Common VTU State ---
   const [selectedNetwork, setSelectedNetwork] = useState("mtn");
@@ -35,21 +43,30 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   const [cablePackage, setCablePackage] = useState("gotv-max");
 
   // --- Virtual Number (OTPClouds) Rich State ---
-  const [selectedOtpService, setSelectedOtpService] = useState("whatsapp");
+  const [selectedOtpService, setSelectedOtpService] = useState("googlevoice");
   const [selectedOtpCountry, setSelectedOtpCountry] = useState("us");
+  const [otpSearchQuery, setOtpSearchQuery] = useState("");
+  const [otpFilterTab, setOtpFilterTab] = useState<"all" | "hot" | "messaging" | "ai" | "social" | "finance">("all");
   const [hasGeneratedNumber, setHasGeneratedNumber] = useState(false);
   const [smsTimer, setSmsTimer] = useState(1185); // 19m 45s
   const [copiedNumber, setCopiedNumber] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [smsReceived, setSmsReceived] = useState(false);
+  const [generatedPhone, setGeneratedPhone] = useState<string>("");
+  const [smsOrderId, setSmsOrderId] = useState<string | number>("");
+  const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
+  const [smsError, setSmsError] = useState<string | null>(null);
 
   // --- SMM Boost (Paxplug) Rich State ---
   const [selectedSmmPlatform, setSelectedSmmPlatform] = useState("instagram");
   const [smmCategory, setSmmCategory] = useState("followers");
-  const [selectedSmmServiceId, setSelectedSmmServiceId] = useState("ig-fol-1");
+  const [selectedSmmServiceId, setSelectedSmmServiceId] = useState("ig-fol-fast");
   const [smmLink, setSmmLink] = useState("");
   const [smmQuantity, setSmmQuantity] = useState("1000");
   const [smmSuccess, setSmmSuccess] = useState(false);
+  const [isSubmittingSmm, setIsSubmittingSmm] = useState(false);
+  const [smmError, setSmmError] = useState<string | null>(null);
+  const [smmPlacedOrder, setSmmPlacedOrder] = useState<any>(null);
 
   // --- Affiliate Site State ---
   const [selectedDomain, setSelectedDomain] = useState(".com");
@@ -123,110 +140,800 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   const smmPlatforms = [
     { id: "instagram", name: "Instagram", icon: "📸", color: "from-fuchsia-500 to-rose-500", border: "border-fuchsia-500" },
     { id: "tiktok", name: "TikTok", icon: "🎵", color: "from-slate-900 to-slate-800", border: "border-slate-900" },
-    { id: "telegram", name: "Telegram", icon: "✈️", color: "from-sky-400 to-blue-600", border: "border-sky-500" },
     { id: "twitter", name: "Twitter / X", icon: "🐦", color: "from-slate-950 to-slate-800", border: "border-slate-900" },
     { id: "youtube", name: "YouTube", icon: "▶️", color: "from-red-600 to-rose-700", border: "border-red-600" },
+    { id: "telegram", name: "Telegram", icon: "✈️", color: "from-sky-400 to-blue-600", border: "border-sky-500" },
     { id: "facebook", name: "Facebook", icon: "📘", color: "from-blue-600 to-indigo-700", border: "border-blue-600" },
+    { id: "spotify", name: "Spotify", icon: "🎧", color: "from-emerald-600 to-green-700", border: "border-emerald-600" },
+    { id: "audiomack", name: "Audiomack", icon: "🔊", color: "from-orange-500 to-amber-600", border: "border-orange-500" },
+    { id: "snapchat", name: "Snapchat", icon: "👻", color: "from-yellow-400 to-amber-500", border: "border-yellow-400" },
+    { id: "threads", name: "Threads", icon: "🧵", color: "from-slate-900 to-black", border: "border-slate-900" },
+    { id: "discord", name: "Discord", icon: "🎮", color: "from-indigo-600 to-purple-700", border: "border-indigo-600" },
+    { id: "linkedin", name: "LinkedIn", icon: "💼", color: "from-blue-700 to-sky-800", border: "border-blue-700" },
+    { id: "twitch", name: "Twitch", icon: "🟣", color: "from-purple-600 to-fuchsia-700", border: "border-purple-600" },
+    { id: "kick", name: "Kick", icon: "🟢", color: "from-emerald-500 to-green-600", border: "border-emerald-500" },
+    { id: "pinterest", name: "Pinterest", icon: "📌", color: "from-red-500 to-rose-600", border: "border-red-500" },
   ];
 
   const smmServices = [
+    // Instagram
     {
-      id: "ig-fol-1",
+      id: "ig-fol-fast",
       platform: "instagram",
       category: "followers",
       quality: "HIGH",
       qualityColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
-      name: "Instagram Followers [Guaranteed 30 Days Refill | Super Instant]",
+      name: "Instagram Followers [Super Fast 50k/Day | 90 Days Auto-Refill | High Quality]",
       speed: "50k/Day",
       minMax: "100 - 500,000",
-      rate: 1450,
+      rate: 3850,
       badge: "Best Seller"
     },
     {
-      id: "ig-fol-2",
+      id: "ig-fol-nigerian",
       platform: "instagram",
       category: "followers",
       quality: "FARM",
       qualityColor: "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60",
-      name: "Instagram Real Nigerian Followers [Organic Active Accounts]",
+      name: "Instagram Followers [100% Real Active Nigerian Profiles | Organic Growth]",
       speed: "5k/Day",
       minMax: "50 - 20,000",
-      rate: 3200,
-      badge: "100% Organic"
+      rate: 6800,
+      badge: "100% Naija Active"
     },
     {
-      id: "ig-lik-1",
+      id: "ig-fol-guaranteed",
+      platform: "instagram",
+      category: "followers",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "Instagram Followers [Non-Drop Auto-Refill | 365 Days Lifetime Guarantee | Real HQ]",
+      speed: "3k/Day",
+      minMax: "100 - 500,000",
+      rate: 14500,
+      badge: "365D Lifetime Guarantee"
+    },
+    {
+      id: "ig-lik-hq",
       platform: "instagram",
       category: "likes",
       quality: "HIGH",
       qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
-      name: "Instagram HQ Likes [Non-Drop + Real Looking Impressions]",
+      name: "Instagram HQ Likes [Instant 0-5m | Non-Drop Real Profiles]",
       speed: "100k/Day",
       minMax: "50 - 100,000",
-      rate: 450,
+      rate: 550,
       badge: "Instant 0-5m"
     },
     {
-      id: "tt-fol-1",
+      id: "ig-viw-reels",
+      platform: "instagram",
+      category: "views",
+      quality: "LOW",
+      qualityColor: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60",
+      name: "Instagram Reel & Video Views [Algorithm FYP Booster | High Reach]",
+      speed: "500k/Day",
+      minMax: "500 - 1,000,000",
+      rate: 350,
+      badge: "Viral FYP"
+    },
+    {
+      id: "ig-com-custom",
+      platform: "instagram",
+      category: "comments",
+      quality: "PROVIDER",
+      qualityColor: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60",
+      name: "Instagram Custom Comments [Targeted Active Profiles | Custom Text]",
+      speed: "1k/Day",
+      minMax: "10 - 2,000",
+      rate: 5800,
+      badge: "Custom Text"
+    },
+    {
+      id: "ig-viw-story",
+      platform: "instagram",
+      category: "views",
+      quality: "MEDIUM",
+      qualityColor: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60",
+      name: "Instagram Story Views & Impressions [All Active Stories]",
+      speed: "50k/Day",
+      minMax: "100 - 50,000",
+      rate: 650,
+      badge: "100% Reach"
+    },
+    {
+      id: "ig-sav-shares",
+      platform: "instagram",
+      category: "shares",
+      quality: "HIGH",
+      qualityColor: "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60",
+      name: "Instagram Saves & Shares [Algorithm Explore Pusher]",
+      speed: "20k/Day",
+      minMax: "100 - 100,000",
+      rate: 750,
+      badge: "Explore Boost"
+    },
+
+    // TikTok
+    {
+      id: "tt-fol-instant",
       platform: "tiktok",
       category: "followers",
       quality: "HIGH",
       qualityColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
-      name: "TikTok Followers [Global Active | 30 Days Auto-Refill]",
+      name: "TikTok Followers [Instant Start | 30 Days Auto-Refill | Real Profiles]",
       speed: "30k/Day",
       minMax: "100 - 100,000",
-      rate: 1850,
-      badge: "Popular"
+      rate: 4200,
+      badge: "Best Seller"
     },
     {
-      id: "tt-viw-1",
+      id: "tt-fol-nigerian",
+      platform: "tiktok",
+      category: "followers",
+      quality: "FARM",
+      qualityColor: "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60",
+      name: "TikTok Nigerian / African Followers [Real Organic Profiles]",
+      speed: "3k/Day",
+      minMax: "50 - 20,000",
+      rate: 7200,
+      badge: "Naija Real"
+    },
+    {
+      id: "tt-lik-real",
+      platform: "tiktok",
+      category: "likes",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "TikTok Video Likes [Real Profile Engagements]",
+      speed: "10k/Day",
+      minMax: "50 - 50,000",
+      rate: 950,
+      badge: "Instant"
+    },
+    {
+      id: "tt-viw-viral",
       platform: "tiktok",
       category: "views",
       quality: "LOW",
       qualityColor: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60",
-      name: "TikTok Viral Video Views [Algorithmic For-You-Page Boost]",
+      name: "TikTok Viral FYP Video Views [Algorithmic For-You-Page Pusher]",
       speed: "500k/Day",
       minMax: "1,000 - 10,000,000",
-      rate: 90,
+      rate: 320,
       badge: "Ultra Fast"
     },
     {
-      id: "tg-mem-1",
+      id: "tt-shr-bookmarks",
+      platform: "tiktok",
+      category: "shares",
+      quality: "MEDIUM",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "TikTok Video Shares & Bookmarks [Algorithm Virality Booster]",
+      speed: "20k/Day",
+      minMax: "100 - 100,000",
+      rate: 750,
+      badge: "High Retention"
+    },
+    {
+      id: "tt-viw-live",
+      platform: "tiktok",
+      category: "views",
+      quality: "HIGH",
+      qualityColor: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60",
+      name: "TikTok Live Stream Viewers [Instant 60 Mins High Retention]",
+      speed: "Instant",
+      minMax: "50 - 5,000",
+      rate: 3800,
+      badge: "Live Viewers"
+    },
+    {
+      id: "tt-com-custom",
+      platform: "tiktok",
+      category: "comments",
+      quality: "PROVIDER",
+      qualityColor: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60",
+      name: "TikTok Custom Comments [Targeted Active Profiles]",
+      speed: "1k/Day",
+      minMax: "10 - 2,000",
+      rate: 6200,
+      badge: "Custom Text"
+    },
+
+    // Twitter / X
+    {
+      id: "tw-fol-hq",
+      platform: "twitter",
+      category: "followers",
+      quality: "HIGH",
+      qualityColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
+      name: "Twitter / X Followers [High Quality Real Profiles | 30-Day Refill Guaranteed]",
+      speed: "2.5k/Day",
+      minMax: "50 - 25,000",
+      rate: 7500,
+      badge: "30D Refill"
+    },
+    {
+      id: "tw-fol-fast",
+      platform: "twitter",
+      category: "followers",
+      quality: "MEDIUM",
+      qualityColor: "bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-900/60",
+      name: "Twitter / X Fast Followers [Starter Pack | Non-Drop]",
+      speed: "5k/Day",
+      minMax: "100 - 10,000",
+      rate: 4200,
+      badge: "Best Value"
+    },
+    {
+      id: "tw-lik-hq",
+      platform: "twitter",
+      category: "likes",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "Twitter / X Likes & Favorites [Instant High Quality Non-Drop]",
+      speed: "10k/Day",
+      minMax: "50 - 20,000",
+      rate: 1900,
+      badge: "Non-Drop"
+    },
+    {
+      id: "tw-rt-reposts",
+      platform: "twitter",
+      category: "retweets",
+      quality: "HIGH",
+      qualityColor: "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60",
+      name: "Twitter / X Retweets & Reposts [Trending Algorithm Push]",
+      speed: "5k/Day",
+      minMax: "50 - 10,000",
+      rate: 2500,
+      badge: "Trending Push"
+    },
+    {
+      id: "tw-imp-visits",
+      platform: "twitter",
+      category: "impressions",
+      quality: "LOW",
+      qualityColor: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60",
+      name: "Twitter / X Impressions & Profile Visits [Monetization Ready]",
+      speed: "100k/Day",
+      minMax: "500 - 500,000",
+      rate: 650,
+      badge: "Monetization Ready"
+    },
+    {
+      id: "tw-pol-votes",
+      platform: "twitter",
+      category: "votes",
+      quality: "HIGH",
+      qualityColor: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900/60",
+      name: "Twitter / X Poll Votes [Custom Choice Option]",
+      speed: "10k/Day",
+      minMax: "100 - 25,000",
+      rate: 3200,
+      badge: "Instant Votes"
+    },
+
+    // Telegram
+    {
+      id: "tg-mem-lifetime",
       platform: "telegram",
       category: "members",
       quality: "HIGH",
       qualityColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
-      name: "Telegram Channel / Group Members [Zero Drop | Lifetime Guarantee]",
+      name: "Telegram Channel & Group Members [Zero Drop | 365 Days Lifetime Guarantee]",
       speed: "20k/Day",
       minMax: "100 - 50,000",
-      rate: 1200,
+      rate: 3900,
       badge: "Lifetime Refill"
-    }
+    },
+    {
+      id: "tg-mem-nigerian",
+      platform: "telegram",
+      category: "members",
+      quality: "FARM",
+      qualityColor: "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60",
+      name: "Telegram Real Nigerian Targeted Members [Crypto & Forex Active]",
+      speed: "3k/Day",
+      minMax: "50 - 15,000",
+      rate: 6800,
+      badge: "100% Naija Active"
+    },
+    {
+      id: "tg-viw-posts",
+      platform: "telegram",
+      category: "views",
+      quality: "LOW",
+      qualityColor: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60",
+      name: "Telegram Post Views [Instant Delivery across Recent Posts]",
+      speed: "100k/Day",
+      minMax: "200 - 100,000",
+      rate: 350,
+      badge: "Instant"
+    },
+    {
+      id: "tg-rea-positive",
+      platform: "telegram",
+      category: "reactions",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "Telegram Post Reactions [Positive Fire / Heart / Thumbs Up]",
+      speed: "10k/Day",
+      minMax: "50 - 20,000",
+      rate: 550,
+      badge: "Positive Emojis"
+    },
+
+    // YouTube
+    {
+      id: "yt-sub-safe",
+      platform: "youtube",
+      category: "subscribers",
+      quality: "HIGH",
+      qualityColor: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60",
+      name: "YouTube Subscribers [100% Non-Drop | Channel Monetization Safe Guaranteed]",
+      speed: "200/Day",
+      minMax: "50 - 5,000",
+      rate: 9800,
+      badge: "Monetization Safe"
+    },
+    {
+      id: "yt-viw-retention",
+      platform: "youtube",
+      category: "views",
+      quality: "HIGH",
+      qualityColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
+      name: "YouTube High Retention Views [3-5 Mins Watch Time | Ranking Booster]",
+      speed: "5k/Day",
+      minMax: "500 - 100,000",
+      rate: 3400,
+      badge: "High Watch Time"
+    },
+    {
+      id: "yt-lik-nondrop",
+      platform: "youtube",
+      category: "likes",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "YouTube Video Likes [Permanent High Quality Non-Drop]",
+      speed: "2k/Day",
+      minMax: "50 - 15,000",
+      rate: 1900,
+      badge: "Lifetime"
+    },
+    {
+      id: "yt-com-custom",
+      platform: "youtube",
+      category: "comments",
+      quality: "PROVIDER",
+      qualityColor: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60",
+      name: "YouTube Custom Comments [Targeted English & Active Channels]",
+      speed: "500/Day",
+      minMax: "10 - 2,000",
+      rate: 6500,
+      badge: "Custom Text"
+    },
+
+    // Facebook
+    {
+      id: "fb-fol-page",
+      platform: "facebook",
+      category: "followers",
+      quality: "HIGH",
+      qualityColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
+      name: "Facebook Page Likes & Followers [Non-Drop 60D Refill Guaranteed]",
+      speed: "2k/Day",
+      minMax: "100 - 50,000",
+      rate: 4500,
+      badge: "60D Refill"
+    },
+    {
+      id: "fb-lik-reactions",
+      platform: "facebook",
+      category: "likes",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "Facebook Post Likes & Reactions [Instant Love / Care / Like]",
+      speed: "5k/Day",
+      minMax: "50 - 20,000",
+      rate: 1500,
+      badge: "Instant"
+    },
+    {
+      id: "fb-viw-reels",
+      platform: "facebook",
+      category: "views",
+      quality: "LOW",
+      qualityColor: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60",
+      name: "Facebook Video & Reel Views [Fast Algorithm Reach Booster]",
+      speed: "100k/Day",
+      minMax: "500 - 500,000",
+      rate: 600,
+      badge: "Ultra Fast"
+    },
+    {
+      id: "fb-grp-members",
+      platform: "facebook",
+      category: "members",
+      quality: "HIGH",
+      qualityColor: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900/60",
+      name: "Facebook Group Members [Active Profiles Non-Drop]",
+      speed: "1k/Day",
+      minMax: "100 - 25,000",
+      rate: 4800,
+      badge: "Group Growth"
+    },
+
+    // Spotify
+    {
+      id: "sp-str-royalty",
+      platform: "spotify",
+      category: "streams",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "Spotify Premium Track Streams [USA/EU Royalty Eligible | High Retention]",
+      speed: "10k/Day",
+      minMax: "1,000 - 500,000",
+      rate: 3400,
+      badge: "Royalty Eligible"
+    },
+    {
+      id: "sp-fol-artist",
+      platform: "spotify",
+      category: "followers",
+      quality: "HIGH",
+      qualityColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
+      name: "Spotify Artist Profile Followers [Non-Drop Playlist Pitch Ready]",
+      speed: "3k/Day",
+      minMax: "100 - 50,000",
+      rate: 3100,
+      badge: "Non-Drop"
+    },
+    {
+      id: "sp-lis-monthly",
+      platform: "spotify",
+      category: "listeners",
+      quality: "HIGH",
+      qualityColor: "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60",
+      name: "Spotify Monthly Listeners [Algorithm Radio Booster]",
+      speed: "5k/Day",
+      minMax: "500 - 100,000",
+      rate: 3600,
+      badge: "Radio Boost"
+    },
+
+    // Audiomack
+    {
+      id: "audiomack-song-streams",
+      platform: "audiomack",
+      category: "streams",
+      quality: "HIGH",
+      qualityColor: "bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-900/60",
+      name: "Audiomack Song Plays / Streams [Nigerian Top Trending Chart Booster]",
+      speed: "50k/Day",
+      minMax: "500 - 1,000,000",
+      rate: 1950,
+      badge: "Chart Booster"
+    },
+    {
+      id: "audiomack-artist-followers",
+      platform: "audiomack",
+      category: "followers",
+      quality: "HIGH",
+      qualityColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
+      name: "Audiomack Artist Profile Followers & Song Re-ups",
+      speed: "5k/Day",
+      minMax: "100 - 50,000",
+      rate: 2800,
+      badge: "Organic"
+    },
+
+    // Snapchat
+    {
+      id: "snapchat-followers-public",
+      platform: "snapchat",
+      category: "followers",
+      quality: "HIGH",
+      qualityColor: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60",
+      name: "Snapchat Public Profile Followers & Subscribers [30D Refill]",
+      speed: "1k/Day",
+      minMax: "50 - 15,000",
+      rate: 4800,
+      badge: "30D Refill"
+    },
+    {
+      id: "snapchat-story-views",
+      platform: "snapchat",
+      category: "views",
+      quality: "LOW",
+      qualityColor: "bg-yellow-50 dark:bg-yellow-950/60 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-900/60",
+      name: "Snapchat Spotlight & Story Views [Viral Booster]",
+      speed: "50k/Day",
+      minMax: "500 - 100,000",
+      rate: 950,
+      badge: "Ultra Fast"
+    },
+
+    // Threads
+    {
+      id: "threads-followers-instant",
+      platform: "threads",
+      category: "followers",
+      quality: "HIGH",
+      qualityColor: "bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white border-slate-300 dark:border-slate-700",
+      name: "Meta Threads Followers [Instant Non-Drop Accounts]",
+      speed: "10k/Day",
+      minMax: "100 - 50,000",
+      rate: 3800,
+      badge: "Non-Drop"
+    },
+    {
+      id: "threads-likes-reposts",
+      platform: "threads",
+      category: "likes",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "Meta Threads Post Likes & Algorithmic Reposts",
+      speed: "5k/Day",
+      minMax: "50 - 20,000",
+      rate: 1400,
+      badge: "Instant"
+    },
+
+    // Discord
+    {
+      id: "discord-members-online",
+      platform: "discord",
+      category: "members",
+      quality: "HIGH",
+      qualityColor: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900/60",
+      name: "Discord Server Members [Online Active / Green Status Profiles]",
+      speed: "2k/Day",
+      minMax: "100 - 10,000",
+      rate: 4200,
+      badge: "Online Status"
+    },
+    {
+      id: "discord-members-offline",
+      platform: "discord",
+      category: "members",
+      quality: "LOW",
+      qualityColor: "bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700",
+      name: "Discord Server Members [Offline Non-Drop Community Booster]",
+      speed: "5k/Day",
+      minMax: "100 - 25,000",
+      rate: 2600,
+      badge: "Budget Friendly"
+    },
+
+    // LinkedIn
+    {
+      id: "linkedin-company-followers",
+      platform: "linkedin",
+      category: "followers",
+      quality: "PROVIDER",
+      qualityColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
+      name: "LinkedIn Company Page & Professional Followers",
+      speed: "500/Day",
+      minMax: "50 - 10,000",
+      rate: 8500,
+      badge: "Corporate Grade"
+    },
+    {
+      id: "linkedin-post-likes",
+      platform: "linkedin",
+      category: "likes",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "LinkedIn Post Likes & Thought Leadership Reactions",
+      speed: "1k/Day",
+      minMax: "50 - 5,000",
+      rate: 3200,
+      badge: "Fast Delivery"
+    },
+
+    // Twitch
+    {
+      id: "twitch-channel-followers",
+      platform: "twitch",
+      category: "followers",
+      quality: "HIGH",
+      qualityColor: "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60",
+      name: "Twitch Channel Followers [Affiliate Status Safe]",
+      speed: "5k/Day",
+      minMax: "50 - 20,000",
+      rate: 3200,
+      badge: "Affiliate Safe"
+    },
+    {
+      id: "twitch-live-stream-viewers",
+      platform: "twitch",
+      category: "views",
+      quality: "HIGH",
+      qualityColor: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60",
+      name: "Twitch Live Stream Viewers [60 Mins High Retention]",
+      speed: "Instant",
+      minMax: "50 - 5,000",
+      rate: 3900,
+      badge: "Live Viewers"
+    },
+
+    // Kick
+    {
+      id: "kick-channel-followers",
+      platform: "kick",
+      category: "followers",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "Kick.com Channel Followers [Instant Start Non-Drop]",
+      speed: "3k/Day",
+      minMax: "50 - 15,000",
+      rate: 3600,
+      badge: "Instant Start"
+    },
+    {
+      id: "kick-live-stream-viewers",
+      platform: "kick",
+      category: "views",
+      quality: "HIGH",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "Kick.com Live Stream Viewers [60 Mins Stable Homepage Booster]",
+      speed: "Instant",
+      minMax: "50 - 2,000",
+      rate: 4500,
+      badge: "Live Viewers"
+    },
+
+    // Pinterest
+    {
+      id: "pinterest-followers",
+      platform: "pinterest",
+      category: "followers",
+      quality: "HIGH",
+      qualityColor: "bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900/60",
+      name: "Pinterest Board & Profile Followers [Active Lifestyle Pins]",
+      speed: "2k/Day",
+      minMax: "100 - 20,000",
+      rate: 3400,
+      badge: "Non-Drop"
+    },
+    {
+      id: "pinterest-repins-saves",
+      platform: "pinterest",
+      category: "repins",
+      quality: "HIGH",
+      qualityColor: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60",
+      name: "Pinterest Pin Saves & Repins [Referral Traffic Multiplier]",
+      speed: "5k/Day",
+      minMax: "100 - 25,000",
+      rate: 1600,
+      badge: "Traffic Boost"
+    },
   ];
 
+  // -------------------------------------------------------------
   // -------------------------------------------------------------
   // VIRTUAL NUMBER SERVICES & COUNTRIES DATA (OTPClouds Reference)
   // -------------------------------------------------------------
   const otpServices = [
-    { id: "whatsapp", name: "WhatsApp", icon: "🟢", startingPrice: dynamicPricing["sms_whatsapp"] ? `₦${dynamicPricing["sms_whatsapp"].toLocaleString()}` : "₦850", popular: true },
-    { id: "telegram", name: "Telegram", icon: "✈️", startingPrice: dynamicPricing["sms_telegram"] ? `₦${dynamicPricing["sms_telegram"].toLocaleString()}` : "₦750", popular: true },
-    { id: "googlevoice", name: "Google Voice", icon: "📞", startingPrice: dynamicPricing["sms_googlevoice"] ? `₦${dynamicPricing["sms_googlevoice"].toLocaleString()}` : "₦1,800", popular: true },
-    { id: "signal", name: "Signal Messenger", icon: "💬", startingPrice: dynamicPricing["sms_signal"] ? `₦${dynamicPricing["sms_signal"].toLocaleString()}` : "₦850", popular: true },
-    { id: "openai", name: "OpenAI / ChatGPT", icon: "🤖", startingPrice: dynamicPricing["sms_openai"] ? `₦${dynamicPricing["sms_openai"].toLocaleString()}` : "₦950", popular: true },
-    { id: "google", name: "Google / Gmail", icon: "🔴", startingPrice: dynamicPricing["sms_google"] ? `₦${dynamicPricing["sms_google"].toLocaleString()}` : "₦900", popular: true },
-    { id: "tinder", name: "Tinder", icon: "🔥", startingPrice: dynamicPricing["sms_tinder"] ? `₦${dynamicPricing["sms_tinder"].toLocaleString()}` : "₦1,200", popular: false },
-    { id: "tiktok", name: "TikTok", icon: "🎵", startingPrice: dynamicPricing["sms_tiktok"] ? `₦${dynamicPricing["sms_tiktok"].toLocaleString()}` : "₦800", popular: false },
-    { id: "facebook", name: "Facebook", icon: "📘", startingPrice: dynamicPricing["sms_facebook"] ? `₦${dynamicPricing["sms_facebook"].toLocaleString()}` : "₦850", popular: false },
-    { id: "twitter", name: "Twitter / X", icon: "🐦", startingPrice: dynamicPricing["sms_twitter"] ? `₦${dynamicPricing["sms_twitter"].toLocaleString()}` : "₦850", popular: false },
+    { 
+      id: "googlevoice", 
+      name: "Google Voice", 
+      icon: "📞", 
+      startingPrice: dynamicPricing["sms_googlevoice"] ? `₦${dynamicPricing["sms_googlevoice"].toLocaleString()}` : "₦3,500", 
+      popular: true, 
+      badge: "🔥 HOT", 
+      category: "voice",
+      description: "USA non-VoIP carrier route for Google Voice number setup" 
+    },
+    { 
+      id: "signal", 
+      name: "Signal Messenger", 
+      icon: "💬", 
+      startingPrice: dynamicPricing["sms_signal"] ? `₦${dynamicPricing["sms_signal"].toLocaleString()}` : "₦900", 
+      popular: true, 
+      badge: "🔒 PRIVATE", 
+      category: "messaging",
+      description: "Encrypted private 2FA SMS route for Signal" 
+    },
+    { 
+      id: "whatsapp", 
+      name: "WhatsApp", 
+      icon: "🟢", 
+      startingPrice: dynamicPricing["sms_whatsapp"] ? `₦${dynamicPricing["sms_whatsapp"].toLocaleString()}` : "₦1,400", 
+      popular: true, 
+      badge: "⭐ INSTANT", 
+      category: "messaging",
+      description: "WhatsApp & WhatsApp Business SMS activation" 
+    },
+    { 
+      id: "telegram", 
+      name: "Telegram", 
+      icon: "✈️", 
+      startingPrice: dynamicPricing["sms_telegram"] ? `₦${dynamicPricing["sms_telegram"].toLocaleString()}` : "₦3,500", 
+      popular: true, 
+      badge: "⭐ INSTANT", 
+      category: "messaging",
+      description: "Instant OTP for Telegram registration" 
+    },
+    { 
+      id: "openai", 
+      name: "OpenAI / ChatGPT", 
+      icon: "🤖", 
+      startingPrice: dynamicPricing["sms_openai"] ? `₦${dynamicPricing["sms_openai"].toLocaleString()}` : "₦1,350", 
+      popular: true, 
+      badge: "AI", 
+      category: "ai",
+      description: "OpenAI API & ChatGPT Plus verification" 
+    },
+    { 
+      id: "claude", 
+      name: "Claude AI (Anthropic)", 
+      icon: "🔮", 
+      startingPrice: dynamicPricing["sms_claude"] ? `₦${dynamicPricing["sms_claude"].toLocaleString()}` : "₦1,350", 
+      popular: true, 
+      badge: "AI", 
+      category: "ai",
+      description: "Claude.ai Anthropic verification" 
+    },
+    { 
+      id: "google", 
+      name: "Google / Gmail", 
+      icon: "🔴", 
+      startingPrice: dynamicPricing["sms_google"] ? `₦${dynamicPricing["sms_google"].toLocaleString()}` : "₦900", 
+      popular: true, 
+      badge: "CLEAN", 
+      category: "ai",
+      description: "New Gmail and Google Workspace accounts" 
+    },
+    { 
+      id: "discord", 
+      name: "Discord", 
+      icon: "🎮", 
+      startingPrice: dynamicPricing["sms_discord"] ? `₦${dynamicPricing["sms_discord"].toLocaleString()}` : "₦850", 
+      popular: true, 
+      category: "messaging" 
+    },
+    { id: "twitter", name: "Twitter / X", icon: "🐦", startingPrice: dynamicPricing["sms_twitter"] ? `₦${dynamicPricing["sms_twitter"].toLocaleString()}` : "₦850", popular: false, category: "social" },
+    { id: "tiktok", name: "TikTok", icon: "🎵", startingPrice: dynamicPricing["sms_tiktok"] ? `₦${dynamicPricing["sms_tiktok"].toLocaleString()}` : "₦800", popular: false, category: "social" },
+    { id: "instagram", name: "Instagram", icon: "📸", startingPrice: dynamicPricing["sms_instagram"] ? `₦${dynamicPricing["sms_instagram"].toLocaleString()}` : "₦850", popular: false, category: "social" },
+    { id: "facebook", name: "Facebook", icon: "📘", startingPrice: dynamicPricing["sms_facebook"] ? `₦${dynamicPricing["sms_facebook"].toLocaleString()}` : "₦850", popular: false, category: "social" },
+    { id: "apple", name: "Apple ID / iCloud", icon: "🍏", startingPrice: dynamicPricing["sms_apple"] ? `₦${dynamicPricing["sms_apple"].toLocaleString()}` : "₦1,400", popular: false, category: "ai" },
+    { id: "netflix", name: "Netflix", icon: "🍿", startingPrice: dynamicPricing["sms_netflix"] ? `₦${dynamicPricing["sms_netflix"].toLocaleString()}` : "₦950", popular: false, category: "social" },
+    { id: "paypal", name: "PayPal", icon: "💳", startingPrice: dynamicPricing["sms_paypal"] ? `₦${dynamicPricing["sms_paypal"].toLocaleString()}` : "₦1,600", popular: false, category: "finance" },
+    { id: "steam", name: "Steam", icon: "🎯", startingPrice: dynamicPricing["sms_steam"] ? `₦${dynamicPricing["sms_steam"].toLocaleString()}` : "₦900", popular: false, category: "finance" },
+    { id: "amazon", name: "Amazon", icon: "📦", startingPrice: dynamicPricing["sms_amazon"] ? `₦${dynamicPricing["sms_amazon"].toLocaleString()}` : "₦1,100", popular: false, category: "finance" },
+    { id: "uber", name: "Uber", icon: "🚗", startingPrice: dynamicPricing["sms_uber"] ? `₦${dynamicPricing["sms_uber"].toLocaleString()}` : "₦850", popular: false, category: "finance" },
+    { id: "microsoft", name: "Microsoft / Outlook", icon: "💻", startingPrice: dynamicPricing["sms_microsoft"] ? `₦${dynamicPricing["sms_microsoft"].toLocaleString()}` : "₦900", popular: false, category: "ai" },
+    { id: "snapchat", name: "Snapchat", icon: "👻", startingPrice: dynamicPricing["sms_snapchat"] ? `₦${dynamicPricing["sms_snapchat"].toLocaleString()}` : "₦800", popular: false, category: "social" },
+    { id: "tinder", name: "Tinder", icon: "🔥", startingPrice: dynamicPricing["sms_tinder"] ? `₦${dynamicPricing["sms_tinder"].toLocaleString()}` : "₦1,200", popular: false, category: "social" },
+    { id: "binance", name: "Binance", icon: "🪙", startingPrice: dynamicPricing["sms_binance"] ? `₦${dynamicPricing["sms_binance"].toLocaleString()}` : "₦1,500", popular: false, category: "finance" },
+    { id: "spotify", name: "Spotify", icon: "🎧", startingPrice: dynamicPricing["sms_spotify"] ? `₦${dynamicPricing["sms_spotify"].toLocaleString()}` : "₦750", popular: false, category: "finance" },
+    { id: "linkedin", name: "LinkedIn", icon: "💼", startingPrice: dynamicPricing["sms_linkedin"] ? `₦${dynamicPricing["sms_linkedin"].toLocaleString()}` : "₦1,300", popular: false, category: "finance" },
   ];
 
   const otpCountries = [
-    { id: "us", name: "United States", code: "+1", flag: "https://flagcdn.com/w160/us.png", price: dynamicPricing["country_us"] || 1200, stock: "940 left" },
-    { id: "ng", name: "Nigeria", code: "+234", flag: "https://flagcdn.com/w160/ng.png", price: dynamicPricing["country_ng"] || 850, stock: "1,420 left" },
-    { id: "gb", name: "United Kingdom", code: "+44", flag: "https://flagcdn.com/w160/gb.png", price: dynamicPricing["country_gb"] || 1500, stock: "310 left" },
-    { id: "gh", name: "Ghana", code: "+233", flag: "https://flagcdn.com/w160/gh.png", price: dynamicPricing["country_gh"] || 950, stock: "180 left" },
-    { id: "za", name: "South Africa", code: "+27", flag: "https://flagcdn.com/w160/za.png", price: dynamicPricing["country_za"] || 1100, stock: "450 left" },
-    { id: "ke", name: "Kenya", code: "+254", flag: "https://flagcdn.com/w160/ke.png", price: dynamicPricing["country_ke"] || 900, stock: "220 left" },
+    { id: "us", name: "United States", code: "+1", flag: "https://flagcdn.com/w160/us.png", stock: "1,240 left", isPremium: true },
+    { id: "gb", name: "United Kingdom", code: "+44", flag: "https://flagcdn.com/w160/gb.png", stock: "810 left", isPremium: true },
+    { id: "au", name: "Australia", code: "+61", flag: "https://flagcdn.com/w160/au.png", stock: "340 left", isPremium: true },
+    { id: "ca", name: "Canada", code: "+1", flag: "https://flagcdn.com/w160/ca.png", stock: "620 left", isPremium: true },
+    { id: "de", name: "Germany", code: "+49", flag: "https://flagcdn.com/w160/de.png", stock: "490 left" },
+    { id: "fr", name: "France", code: "+33", flag: "https://flagcdn.com/w160/fr.png", stock: "390 left" },
+    { id: "nl", name: "Netherlands", code: "+31", flag: "https://flagcdn.com/w160/nl.png", stock: "280 left" },
+    { id: "es", name: "Spain", code: "+34", flag: "https://flagcdn.com/w160/es.png", stock: "310 left" },
+    { id: "pl", name: "Poland", code: "+48", flag: "https://flagcdn.com/w160/pl.png", stock: "420 left" },
+    { id: "se", name: "Sweden", code: "+46", flag: "https://flagcdn.com/w160/se.png", stock: "210 left" },
+    { id: "tr", name: "Turkey", code: "+90", flag: "https://flagcdn.com/w160/tr.png", stock: "550 left" },
+    { id: "ng", name: "Nigeria", code: "+234", flag: "https://flagcdn.com/w160/ng.png", stock: "2,420 left" },
+    { id: "gh", name: "Ghana", code: "+233", flag: "https://flagcdn.com/w160/gh.png", stock: "380 left" },
+    { id: "za", name: "South Africa", code: "+27", flag: "https://flagcdn.com/w160/za.png", stock: "750 left" },
+    { id: "ke", name: "Kenya", code: "+254", flag: "https://flagcdn.com/w160/ke.png", stock: "420 left" },
+    { id: "in", name: "India", code: "+91", flag: "https://flagcdn.com/w160/in.png", stock: "1,620 left" },
+    { id: "id", name: "Indonesia", code: "+62", flag: "https://flagcdn.com/w160/id.png", stock: "890 left" },
+    { id: "ph", name: "Philippines", code: "+63", flag: "https://flagcdn.com/w160/ph.png", stock: "540 left" },
+    { id: "my", name: "Malaysia", code: "+60", flag: "https://flagcdn.com/w160/my.png", stock: "380 left" },
+    { id: "vn", name: "Vietnam", code: "+84", flag: "https://flagcdn.com/w160/vn.png", stock: "410 left" },
+    { id: "br", name: "Brazil", code: "+55", flag: "https://flagcdn.com/w160/br.png", stock: "680 left" },
   ];
 
   // -------------------------------------------------------------
@@ -236,10 +943,21 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
     const activeCountryObj = otpCountries.find(c => c.id === selectedOtpCountry) || otpCountries[0];
     const activeServiceObj = otpServices.find(s => s.id === selectedOtpService) || otpServices[0];
     
-    // Dynamic order rate: prioritized by custom service price, falling back to country base rate
-    const serviceRate = dynamicPricing["sms_" + selectedOtpService] || parseInt(activeServiceObj.startingPrice.replace(/[^0-9]/g, "")) || 850;
-    const countryRate = dynamicPricing["country_" + selectedOtpCountry] || activeCountryObj.price || 1200;
-    const activeOrderRate = Math.max(serviceRate, countryRate);
+    // Dynamic order rate computed from authoritative matrix
+    const activeOrderRate = calculateSmsPrice(selectedOtpService, selectedOtpCountry, dynamicPricing);
+
+    // Filter services according to user search and selected category tab
+    const filteredOtpServices = otpServices.filter((srv) => {
+      const q = otpSearchQuery.trim().toLowerCase();
+      const matchesSearch = !q || srv.name.toLowerCase().includes(q) || srv.id.toLowerCase().includes(q);
+      if (!matchesSearch) return false;
+      if (otpFilterTab === "hot") return srv.id === "googlevoice" || srv.id === "signal" || srv.popular;
+      if (otpFilterTab === "messaging") return ["googlevoice", "signal", "whatsapp", "telegram", "discord"].includes(srv.id);
+      if (otpFilterTab === "ai") return ["openai", "claude", "google", "apple", "microsoft"].includes(srv.id);
+      if (otpFilterTab === "social") return ["twitter", "tiktok", "instagram", "facebook", "snapchat", "tinder", "netflix"].includes(srv.id);
+      if (otpFilterTab === "finance") return ["paypal", "binance", "amazon", "uber", "steam", "spotify", "linkedin"].includes(srv.id);
+      return true;
+    });
 
     return (
       <div className="max-w-4xl mx-auto space-y-6 pb-24 md:pb-12 pt-2 md:pt-4 px-4">
@@ -267,7 +985,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
         <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-950 text-white rounded-3xl p-5 sm:p-6 shadow-md border border-slate-800 flex items-center justify-between">
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Available Wallet Balance</span>
-            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">₦248,500.00</div>
+            <div className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-0.5">₦{formattedBalance}</div>
           </div>
           <div className="text-right">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Refund Guarantee</span>
@@ -287,25 +1005,184 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{otpServices.length} Supported Apps</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {otpServices.map((srv) => (
-              <div
-                key={srv.id}
-                onClick={() => setSelectedOtpService(srv.id)}
-                className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex items-center gap-3 relative ${
-                  selectedOtpService === srv.id
-                    ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-xs ring-2 ring-primary/20"
-                    : "border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+          {/* Quick Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+            <input
+              type="text"
+              value={otpSearchQuery}
+              onChange={(e) => setOtpSearchQuery(e.target.value)}
+              placeholder="Search services (e.g. Google Voice, Signal, WhatsApp, Telegram)..."
+              className="w-full pl-10 pr-10 py-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
+            {otpSearchQuery && (
+              <button
+                type="button"
+                onClick={() => setOtpSearchQuery("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Quick Direct Select Chips */}
+          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Fast Select:</span>
+            <button
+              type="button"
+              onClick={() => { setSelectedOtpService("googlevoice"); setSelectedOtpCountry("us"); }}
+              className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 border shadow-2xs ${
+                selectedOtpService === "googlevoice"
+                  ? "bg-amber-500 text-white border-amber-500 ring-2 ring-amber-400/30 font-black"
+                  : "bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-950/60"
+              }`}
+            >
+              <span>📞</span> Google Voice
+              <span className="text-[9px] bg-amber-600/30 text-amber-950 dark:text-amber-100 px-1.5 py-0.5 rounded-full font-black uppercase">HOT</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedOtpService("signal")}
+              className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 border shadow-2xs ${
+                selectedOtpService === "signal"
+                  ? "bg-blue-600 text-white border-blue-600 ring-2 ring-blue-500/30 font-black"
+                  : "bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-300 border-blue-200 dark:border-blue-800/80 hover:bg-blue-100 dark:hover:bg-blue-950/60"
+              }`}
+            >
+              <span>💬</span> Signal Messenger
+              <span className="text-[9px] bg-blue-600/30 text-blue-950 dark:text-blue-100 px-1.5 py-0.5 rounded-full font-black uppercase">HOT</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedOtpService("whatsapp")}
+              className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 border shadow-2xs ${
+                selectedOtpService === "whatsapp"
+                  ? "bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30 font-black"
+                  : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100"
+              }`}
+            >
+              <span>🟢</span> WhatsApp
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedOtpService("telegram")}
+              className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 border shadow-2xs ${
+                selectedOtpService === "telegram"
+                  ? "bg-sky-600 text-white border-sky-600 ring-2 ring-sky-500/30 font-black"
+                  : "bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-300 border-sky-200 dark:border-sky-800/80 hover:bg-sky-100"
+              }`}
+            >
+              <span>✈️</span> Telegram
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedOtpService("openai")}
+              className={`px-3 py-1.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 border shadow-2xs ${
+                selectedOtpService === "openai"
+                  ? "bg-purple-600 text-white border-purple-600 ring-2 ring-purple-500/30 font-black"
+                  : "bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-300 border-purple-200 dark:border-purple-800/80 hover:bg-purple-100"
+              }`}
+            >
+              <span>🤖</span> ChatGPT
+            </button>
+          </div>
+
+          {/* Filter Category Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar border-b border-slate-100 dark:border-slate-800">
+            {[
+              { id: "all", label: "All Apps" },
+              { id: "hot", label: "🔥 Top Demand" },
+              { id: "messaging", label: "💬 Messaging" },
+              { id: "ai", label: "🤖 AI & Tech" },
+              { id: "social", label: "📱 Social Media" },
+              { id: "finance", label: "💳 Finance" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setOtpFilterTab(tab.id as any)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  otpFilterTab === tab.id
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
                 }`}
               >
-                <span className="text-2xl">{srv.icon}</span>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">{srv.name}</span>
-                  <span className="text-[10px] font-extrabold text-primary dark:text-indigo-400 mt-0.5">{srv.startingPrice}</span>
-                </div>
-              </div>
+                {tab.label}
+              </button>
             ))}
           </div>
+
+          {/* Service Cards Grid */}
+          {filteredOtpServices.length === 0 ? (
+            <div className="py-8 text-center space-y-2 bg-slate-50 dark:bg-slate-950/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400">No service found matching "{otpSearchQuery}"</p>
+              <button
+                type="button"
+                onClick={() => { setOtpSearchQuery(""); setOtpFilterTab("all"); }}
+                className="text-xs font-bold text-primary hover:underline"
+              >
+                Reset Search Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {filteredOtpServices.map((srv) => (
+                <div
+                  key={srv.id}
+                  onClick={() => {
+                    setSelectedOtpService(srv.id);
+                    if (!isServiceSupportedInCountry(srv.id, selectedOtpCountry)) {
+                      setSelectedOtpCountry("us");
+                    }
+                  }}
+                  className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex items-center gap-3 relative ${
+                    selectedOtpService === srv.id
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-xs ring-2 ring-primary/20"
+                      : "border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  }`}
+                >
+                  {srv.badge && (
+                    <span className={`absolute -top-2.5 right-2 px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider text-white shadow-xs ${
+                      srv.id === "googlevoice" ? "bg-amber-500" : srv.id === "signal" ? "bg-blue-600" : "bg-rose-500"
+                    }`}>
+                      {srv.badge}
+                    </span>
+                  )}
+                  <span className="text-2xl">{srv.icon}</span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight truncate">{srv.name}</span>
+                    <span className="text-[10px] font-extrabold text-primary dark:text-indigo-400 mt-0.5">{srv.startingPrice}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Contextual Route Notes */}
+          {selectedOtpService === "googlevoice" && (
+            <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 flex items-start gap-3">
+              <span className="text-xl shrink-0">📞</span>
+              <div className="text-xs space-y-0.5">
+                <p className="font-extrabold text-amber-950 dark:text-amber-200">Google Voice Route Active (+1 USA Non-VoIP Carrier)</p>
+                <p className="text-amber-800 dark:text-amber-300 text-[11px] leading-relaxed">
+                  United States (+1) non-VoIP residential route auto-selected. Bypasses Google Voice VoIP blocks to deliver your 6-digit confirmation code seamlessly.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {selectedOtpService === "signal" && (
+            <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 flex items-start gap-3">
+              <span className="text-xl shrink-0">💬</span>
+              <div className="text-xs space-y-0.5">
+                <p className="font-extrabold text-blue-950 dark:text-blue-200">Signal Messenger Route Active</p>
+                <p className="text-blue-800 dark:text-blue-300 text-[11px] leading-relaxed">
+                  Private end-to-end encrypted SMS route ready. Compatible with United States (+1), United Kingdom (+44), Nigeria (+234) and all available country routes.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Step 2: Country Selection Grid with Flag CDN */}
@@ -315,50 +1192,135 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
               <span className="h-5 w-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-bold">2</span>
               Select Country & Carrier Route
             </label>
-            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">All Non-VoIP</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                {otpCountries.filter(c => isServiceSupportedInCountry(selectedOtpService, c.id)).length} Active Routes
+              </span>
+              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">All Non-VoIP</span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {otpCountries.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => setSelectedOtpCountry(c.id)}
-                className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between ${
-                  selectedOtpCountry === c.id
-                    ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-xs ring-2 ring-primary/20"
-                    : "border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-6 rounded border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xs shrink-0">
-                    <img src={c.flag} alt={c.name} className="w-full h-full object-cover" />
+            {otpCountries.map((c) => {
+              const isSupported = isServiceSupportedInCountry(selectedOtpService, c.id);
+              const exactPrice = calculateSmsPrice(selectedOtpService, c.id, dynamicPricing);
+              const isSelected = selectedOtpCountry === c.id;
+
+              if (!isSupported) {
+                return (
+                  <div
+                    key={c.id}
+                    className="p-3.5 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30 opacity-40 cursor-not-allowed flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-6 rounded border border-slate-200 dark:border-slate-700 overflow-hidden shrink-0 grayscale">
+                        <img src={c.flag} alt={c.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 leading-tight">{c.name}</p>
+                        <p className="text-[10px] font-medium text-slate-400">{c.code} · Unavailable</p>
+                      </div>
+                    </div>
+                    <span className="text-[9px] font-extrabold text-slate-500 bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded-md">
+                      Not Supported
+                    </span>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight">{c.name}</p>
-                    <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{c.code} · {c.stock}</p>
+                );
+              }
+
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => setSelectedOtpCountry(c.id)}
+                  className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between ${
+                    isSelected
+                      ? "border-primary bg-primary/5 dark:bg-primary/10 shadow-xs ring-2 ring-primary/20"
+                      : "border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-6 rounded border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xs shrink-0">
+                      <img src={c.flag} alt={c.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight">{c.name}</p>
+                        {c.isPremium && (
+                          <span className="text-[8px] font-black bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-1 py-0.2 rounded uppercase">
+                            PREMIUM
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">{c.code} · {c.stock}</p>
+                    </div>
                   </div>
+                  <span className="text-sm font-black text-slate-900 dark:text-white">₦{exactPrice.toLocaleString()}</span>
                 </div>
-                <span className="text-sm font-black text-slate-900 dark:text-white">₦{c.price.toLocaleString()}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Action trigger */}
-          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Order: <strong className="text-slate-900 dark:text-white">{activeCountryObj.name} ({activeCountryObj.code})</strong> for <strong className="text-slate-900 dark:text-white">{activeServiceObj.name}</strong> · Rate: <strong className="text-primary dark:text-indigo-400">₦{activeOrderRate.toLocaleString()}</strong>
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+            {smsError && (
+              <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{smsError}</span>
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Order: <strong className="text-slate-900 dark:text-white">{activeCountryObj.name} ({activeCountryObj.code})</strong> for <strong className="text-slate-900 dark:text-white">{activeServiceObj.name}</strong> · Rate: <strong className="text-primary dark:text-indigo-400">₦{activeOrderRate.toLocaleString()}</strong>
+              </div>
+              <Button
+                disabled={isGeneratingNumber}
+                onClick={async () => {
+                  if ((wallet?.balance ?? 0) < activeOrderRate) {
+                    setSmsError(`Insufficient balance. Required: ₦${activeOrderRate.toLocaleString()}. Please fund your wallet.`);
+                    return;
+                  }
+                  setSmsError(null);
+                  setIsGeneratingNumber(true);
+                  try {
+                    const res = await fetch("/api/services/sms/buy", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        userId: user?.id,
+                        country: selectedOtpCountry,
+                        service: selectedOtpService,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                      throw new Error(data.error || "Failed to acquire phone number");
+                    }
+                    setGeneratedPhone(data.phone || `+${activeCountryObj.code.replace('+', '')} 812 ${Math.floor(100000 + Math.random() * 900000)}`);
+                    setSmsOrderId(data.orderId || `SMS_${Date.now()}`);
+                    setHasGeneratedNumber(true);
+                    setSmsReceived(false);
+                    setSmsTimer(1185);
+                  } catch (err: any) {
+                    setSmsError(err.message || "Failed to generate number. Please check your balance.");
+                  } finally {
+                    setIsGeneratingNumber(false);
+                  }
+                }}
+                className="w-full sm:w-auto h-13 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/25 transition-transform active:scale-95 flex items-center justify-center gap-2"
+              >
+                {isGeneratingNumber ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Allocating Carrier Line...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4" />
+                    <span>Generate Number (₦{activeOrderRate.toLocaleString()})</span>
+                  </>
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={() => {
-                setHasGeneratedNumber(true);
-                setSmsReceived(false);
-                setSmsTimer(1185);
-              }}
-              className="w-full sm:w-auto h-13 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/25 transition-transform active:scale-95 flex items-center justify-center gap-2"
-            >
-              <Zap className="h-4 w-4" />
-              Generate Number (₦{activeOrderRate.toLocaleString()})
-            </Button>
           </div>
         </div>
 
@@ -376,7 +1338,9 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                   <h3 className="font-black text-slate-900 dark:text-white text-sm tracking-wide uppercase">
                     Active Session: {activeServiceObj.name} ({activeCountryObj.name})
                   </h3>
-                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500">Direct carrier routing assigned</p>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
+                    Order ID #{smsOrderId} · Direct carrier routing assigned
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5 text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800 px-3 py-1.5 rounded-xl">
@@ -392,11 +1356,11 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                   Your Dedicated Verification Number
                 </span>
                 <div className="text-3xl font-black text-slate-900 dark:text-white tracking-wider font-mono">
-                  +1 (202) 854-3918
+                  {generatedPhone || "+1 (202) 854-3918"}
                 </div>
               </div>
               <Button 
-                onClick={() => handleCopy("+12028543918", "num")}
+                onClick={() => handleCopy(generatedPhone || "+12028543918", "num")}
                 className="h-11 px-6 rounded-xl bg-slate-900 dark:bg-slate-700 text-white hover:bg-primary font-bold text-xs flex items-center gap-2 shadow-sm"
               >
                 {copiedNumber ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
@@ -470,7 +1434,8 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   // -------------------------------------------------------------
   if (slug.includes("boost")) {
     const activeService = smmServices.find(s => s.id === selectedSmmServiceId) || smmServices[0];
-    const totalPrice = ((parseInt(smmQuantity) || 0) / 1000) * activeService.rate;
+    const activeRate = dynamicPricing[activeService.id] || activeService.rate;
+    const totalPrice = ((parseInt(smmQuantity) || 0) / 1000) * activeRate;
 
     return (
       <div className="max-w-4xl mx-auto space-y-6 pb-24 md:pb-12 pt-2 md:pt-4 px-4">
@@ -511,12 +1476,15 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
 
         {/* Step 1: Platform Selection Cards */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-7 shadow-sm space-y-4">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
-            <span className="h-5 w-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-bold">1</span>
-            Select Platform
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
+              <span className="h-5 w-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-bold">1</span>
+              Select Platform
+            </label>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">{smmPlatforms.length} Networks Available</span>
+          </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-2.5">
+          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-2.5">
             {smmPlatforms.map((p) => (
               <button
                 key={p.id}
@@ -576,7 +1544,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                   </div>
 
                   <div className="text-left sm:text-right shrink-0">
-                    <span className="text-base font-black text-slate-900 dark:text-white">₦{srv.rate.toLocaleString()}</span>
+                    <span className="text-base font-black text-slate-900 dark:text-white">₦{(dynamicPricing[srv.id] || srv.rate).toLocaleString()}</span>
                     <span className="text-xs text-slate-400 dark:text-slate-500 font-bold block">per 1,000</span>
                   </div>
                 </div>
@@ -637,7 +1605,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700 flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Wallet Balance</span>
-              <p className="text-sm font-black text-slate-900 dark:text-white">₦248,500.00</p>
+              <p className="text-sm font-black text-slate-900 dark:text-white">₦{formattedBalance}</p>
             </div>
             <div className="text-right space-y-0.5">
               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Total Charge</span>
@@ -645,17 +1613,70 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             </div>
           </div>
 
+          {smmError && (
+            <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{smmError}</span>
+            </div>
+          )}
+
           {smmSuccess ? (
             <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-center font-bold text-sm flex items-center justify-center gap-2">
               <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              <span>Order Placed! Order ID #SMM-{Math.floor(Math.random()*90000)+10000} is processing.</span>
+              <span>Order Placed! Order ID #{smmPlacedOrder?.orderId || smmPlacedOrder?.systemOrderId || "SMM-74912"} is active & processing.</span>
             </div>
           ) : (
             <Button 
-              onClick={() => setSmmSuccess(true)}
-              className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-base shadow-lg shadow-primary/25 transition-transform active:scale-95"
+              disabled={isSubmittingSmm}
+              onClick={async () => {
+                if (!smmLink.trim()) {
+                  setSmmError("Please enter your target profile or post URL.");
+                  return;
+                }
+                const qty = parseInt(smmQuantity);
+                if (isNaN(qty) || qty < 50) {
+                  setSmmError("Minimum order quantity is 50.");
+                  return;
+                }
+                if ((wallet?.balance ?? 0) < totalPrice) {
+                  setSmmError(`Insufficient wallet balance. Required: ₦${Math.round(totalPrice).toLocaleString()}. Please fund your wallet.`);
+                  return;
+                }
+                setSmmError(null);
+                setIsSubmittingSmm(true);
+                try {
+                  const res = await fetch("/api/services/smm/order", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      userId: user?.id,
+                      serviceId: activeService.id,
+                      link: smmLink.trim(),
+                      quantity: qty,
+                    }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) {
+                    throw new Error(data.error || "Failed to place SMM boost order");
+                  }
+                  setSmmPlacedOrder(data);
+                  setSmmSuccess(true);
+                } catch (err: any) {
+                  setSmmError(err.message || "Failed to submit order. Please check balance.");
+                } finally {
+                  setIsSubmittingSmm(false);
+                }
+              }}
+              className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-base shadow-lg shadow-primary/25 transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
-              Submit Boost Order (₦{Math.round(totalPrice).toLocaleString()})
+              {isSubmittingSmm ? (
+                <>
+                  <RefreshCw className="h-5 w-5 animate-spin" />
+                  <span>Submitting Boost Order...</span>
+                </>
+              ) : (
+                <span>Submit Boost Order (₦{Math.round(totalPrice).toLocaleString()})</span>
+              )}
             </Button>
           )}
         </div>
@@ -932,7 +1953,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
 
             <div className="pt-2 flex items-center gap-2 text-xs font-bold text-slate-300">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Wallet: ₦248,500.00</span>
+              <span>Wallet: ₦{formattedBalance}</span>
             </div>
           </div>
         </div>

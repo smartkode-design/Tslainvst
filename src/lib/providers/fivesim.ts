@@ -76,24 +76,52 @@ export class FiveSimService {
     operator: string = "any",
     service: string = "whatsapp"
   ): Promise<FiveSimOrder> {
+    const countryMap: Record<string, string> = {
+      us: "usa",
+      gb: "england",
+      uk: "england",
+      ng: "nigeria",
+      ca: "canada",
+      gh: "ghana",
+      za: "southafrica",
+      ke: "kenya",
+      de: "germany",
+      fr: "france",
+      nl: "netherlands",
+      br: "brazil",
+      in: "india",
+      au: "australia",
+      id: "indonesia",
+      ph: "philippines",
+      my: "malaysia",
+      pl: "poland",
+      es: "spain",
+      se: "sweden",
+      vn: "vietnam",
+      tr: "turkey",
+    };
+
+    const targetCountry = countryMap[country.toLowerCase()] || country.toLowerCase();
+    const targetService = service.toLowerCase() === "googlevoice" ? "googlevoice" : service.toLowerCase();
+
     if (!this.token) {
       // Demo mock order for preview testing before live token is added
       return {
         id: Math.floor(100000 + Math.random() * 900000),
-        phone: `+1 (${Math.floor(200 + Math.random() * 800)}) 555-${Math.floor(1000 + Math.random() * 9000)}`,
+        phone: targetCountry === "usa" ? `+1 (${Math.floor(200 + Math.random() * 800)}) 555-${Math.floor(1000 + Math.random() * 9000)}` : `+44 7700 ${Math.floor(100000 + Math.random() * 900000)}`,
         operator: "any",
-        product: service,
+        product: targetService,
         price: 0.9,
         status: "PENDING",
         expires: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         sms: [],
-        country,
+        country: targetCountry,
         created_at: new Date().toISOString(),
       };
     }
 
     return this.request<FiveSimOrder>(
-      `/user/buy/activation/${country.toLowerCase()}/${operator.toLowerCase()}/${service.toLowerCase()}`
+      `/user/buy/activation/${targetCountry}/${operator.toLowerCase()}/${targetService}`
     );
   }
 

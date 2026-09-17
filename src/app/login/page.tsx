@@ -39,7 +39,27 @@ export default function LoginPage() {
         return;
       }
 
-      if (email.toLowerCase().includes("admin")) {
+      // Check user role from profiles table
+      let isAdmin = false;
+      const normalizedEmail = email.toLowerCase().trim();
+      if (normalizedEmail.includes("admin") || normalizedEmail === "hassanhuss1027@gmail.com") {
+        isAdmin = true;
+      } else if (data.user?.id) {
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", data.user.id)
+            .single();
+          if (profile?.role === "admin") {
+            isAdmin = true;
+          }
+        } catch {
+          // Fallback
+        }
+      }
+
+      if (isAdmin) {
         router.push("/admin");
       } else {
         router.push("/dashboard");

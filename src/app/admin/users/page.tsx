@@ -1,29 +1,75 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Filter, ShieldAlert, MoreHorizontal } from "lucide-react";
+import { Search, Loader2, RefreshCw } from "lucide-react";
+
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  balance: number;
+  joined: string;
+}
+
+function formatNaira(amount: number): string {
+  return new Intl.NumberFormat("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
 
 export default function AdminUsersPage() {
-  const users = [
-    { id: "USR-001", name: "Oluwaseun A.", email: "olu@example.com", balance: "₦248,500.00", status: "Active", joined: "Jan 12, 2026" },
-    { id: "USR-002", name: "Sarah Smith", email: "sarah@example.com", balance: "₦12,000.00", status: "Active", joined: "Feb 04, 2026" },
-    { id: "USR-003", name: "Michael Johnson", email: "mj@example.com", balance: "₦0.00", status: "Suspended", joined: "Mar 15, 2026" },
-    { id: "USR-004", name: "David O.", email: "david@tsla.com", balance: "₦1,450,000.00", status: "Active", joined: "Dec 01, 2025" },
-    { id: "USR-005", name: "Emeka U.", email: "emeka@example.com", balance: "₦45,200.00", status: "Pending KYC", joined: "Sep 10, 2026" },
-  ];
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/users");
+      const data = await res.json();
+      if (data.success && data.users) {
+        setUsers(data.users);
+      }
+    } catch (err) {
+      console.error("Failed to load users", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const filteredUsers = users.filter((u) => {
+    const q = searchQuery.toLowerCase();
+    return (
+      u.name.toLowerCase().includes(q) ||
+      u.email.toLowerCase().includes(q) ||
+      u.id.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight mb-1">User Management</h1>
-          <p className="text-muted-foreground">Manage users, view balances, and handle account statuses.</p>
+          <p className="text-muted-foreground">Manage users, view live balances, and handle account statuses.</p>
         </div>
-        <Button className="bg-slate-900 text-white dark:bg-white dark:text-black">
-          Export Users
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={fetchUsers} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -31,85 +77,65 @@ export default function AdminUsersPage() {
           <div className="flex gap-4 items-center justify-between">
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search users by name, email, or ID..." className="pl-9 h-9" />
+              <Input
+                placeholder="Search users by name, email, or ID..."
+                className="pl-9 h-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <Button variant="outline" size="sm" className="hidden sm:flex">
-              <Filter className="h-4 w-4 mr-2" /> Filters
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User ID</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Wallet Balance</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Joined</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium text-xs text-muted-foreground">{user.id}</TableCell>
-                  <TableCell>
-                    <p className="font-medium text-sm">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                  </TableCell>
-                  <TableCell className="font-semibold">{user.balance}</TableCell>
-                  <TableCell>
-                    {user.status === 'Active' && <Badge variant="success" className="bg-success/10 text-success border-0 hover:bg-success/20">Active</Badge>}
-                    {user.status === 'Suspended' && <Badge variant="destructive" className="bg-danger/10 text-danger border-0 hover:bg-danger/20">Suspended</Badge>}
-                    {user.status === 'Pending KYC' && <Badge variant="warning" className="bg-warning/10 text-warning-foreground border-0 hover:bg-warning/20">Pending KYC</Badge>}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{user.joined}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" className="h-8">View</Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 ml-1">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+          {loading ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Loading users from database...</span>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <p className="font-semibold text-sm">No registered users found</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User ID</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Wallet Balance</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Joined</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {user.id.slice(0, 8)}...
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-medium text-sm">{user.name}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </TableCell>
+                    <TableCell className="font-semibold font-mono">
+                      ₦{formatNaira(user.balance)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={user.role === "admin" ? "destructive" : "outline"}
+                        className="capitalize"
+                      >
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{user.joined}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
-
-      {/* Manual Wallet Adjustment Mock View */}
-      <div className="mt-12">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <ShieldAlert className="h-5 w-5 text-warning" />
-          Critical Actions
-        </h2>
-        <Card className="border-danger/20 bg-danger/5">
-          <CardHeader>
-            <CardTitle className="text-danger">Manual Balance Adjustment</CardTitle>
-            <CardDescription className="text-danger/80">
-              Adjusting a user's wallet balance manually requires an explicit reason and creates a permanent audit log.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-end gap-4 max-w-3xl">
-              <div className="space-y-2 flex-1">
-                <label className="text-sm font-medium">User ID</label>
-                <Input placeholder="USR-XXX" className="bg-background" />
-              </div>
-              <div className="space-y-2 flex-1">
-                <label className="text-sm font-medium">Amount</label>
-                <Input type="number" placeholder="0.00" className="bg-background" />
-              </div>
-              <div className="space-y-2 flex-[2]">
-                <label className="text-sm font-medium">Reason (Required)</label>
-                <Input placeholder="e.g. Refund for failed transaction TRX-8933" className="bg-background" />
-              </div>
-              <Button variant="destructive">Execute Adjustment</Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

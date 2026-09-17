@@ -16,7 +16,7 @@ export default function ServicesHubPage() {
       services: [
         {
           name: "Virtual Numbers (SMS OTP)",
-          desc: "Rent non-VoIP temporary numbers for WhatsApp, Telegram, OpenAI & more.",
+          desc: "Instant SMS OTP for Google Voice, Signal, WhatsApp, Telegram, OpenAI & 20+ apps.",
           href: "/dashboard/services/virtual-no",
           icon: Globe,
           color: "from-pink-500 to-rose-600",

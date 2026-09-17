@@ -60,10 +60,22 @@ export default function RegisterPage() {
         return;
       }
 
-      setSuccessMessage("Account created successfully! Redirecting to your dashboard...");
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1000);
+      if (data?.user?.identities && data.user.identities.length === 0) {
+        setErrorMessage("An account with this email address already exists. Please log in.");
+        return;
+      }
+
+      if (data?.session) {
+        setSuccessMessage("Account created successfully! Redirecting to dashboard...");
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1200);
+      } else {
+        setSuccessMessage("Account created successfully! Redirecting to login...");
+        setTimeout(() => {
+          router.push("/login");
+        }, 1800);
+      }
     } catch (err: any) {
       setErrorMessage(err.message || "An unexpected error occurred during signup.");
     } finally {
