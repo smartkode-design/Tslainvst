@@ -31,7 +31,7 @@ interface FiveSimOrder {
 }
 
 export class FiveSimService {
-  private static token = process.env.FIVESIM_API_TOKEN || "";
+  private static token = process.env.FIVESIM_API_TOKEN || process.env.FIVESIM_API_KEY || "";
 
   private static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     if (!this.token) {
