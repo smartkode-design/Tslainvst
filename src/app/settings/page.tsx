@@ -96,7 +96,7 @@ export default function SettingsPage() {
           </div>
           <div className="space-y-3">
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-              Your 4-digit PIN is required to authorize purchases, wallet withdrawals, and digital asset orders.
+              Your 4-digit PIN is required to authorize purchases and digital asset orders.
             </p>
             <div className="flex gap-2 max-w-xs">
               <Input

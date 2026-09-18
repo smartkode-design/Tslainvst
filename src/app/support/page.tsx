@@ -48,7 +48,7 @@ export default function SupportPage() {
             </p>
           </div>
           <a 
-            href="https://wa.me/2348000000000" 
+            href="https://wa.me/2348114491126?text=Hello%20TSLA%20Support,%20I%20need%20assistance." 
             target="_blank" 
             rel="noopener noreferrer"
             className="w-full sm:w-auto"
@@ -67,7 +67,7 @@ export default function SupportPage() {
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Email Us</p>
-              <p className="text-sm font-black text-slate-900 dark:text-white">support@tsla.com</p>
+              <p className="text-sm font-black text-slate-900 dark:text-white">support@tslainvst.com</p>
             </div>
           </div>
 

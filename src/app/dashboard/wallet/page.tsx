@@ -170,7 +170,7 @@ export default function WalletPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">My Wallet</h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">Manage your balance, automated deposits, and transfers</p>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">Manage your balance and automated instant deposits</p>
         </div>
         <Link href="/dashboard/wallet/fund">
           <Button className="h-11 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-xs shadow-md shadow-primary/20 flex items-center gap-1.5">
@@ -234,14 +234,9 @@ export default function WalletPage() {
             </p>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <Link href="/dashboard/wallet/fund" className="flex-1 sm:flex-initial">
+            <Link href="/dashboard/wallet/fund" className="w-full sm:w-auto">
               <Button className="w-full sm:w-auto h-12 px-7 rounded-2xl bg-white text-slate-950 hover:bg-slate-100 font-black text-xs shadow-md">
                 <Plus className="h-4 w-4 mr-1.5 text-primary" /> Add Money
-              </Button>
-            </Link>
-            <Link href="/dashboard/services/buy-data" className="flex-1 sm:flex-initial">
-              <Button variant="outline" className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-white/10 border-white/20 text-white hover:bg-white/20 font-bold text-xs">
-                <ArrowUpRight className="h-4 w-4 mr-1.5" /> Transfer
               </Button>
             </Link>
           </div>

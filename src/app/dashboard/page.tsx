@@ -132,14 +132,9 @@ export default function DashboardOverview() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <Link href="/dashboard/wallet/fund" className="flex-1 sm:flex-initial">
+            <Link href="/dashboard/wallet/fund" className="w-full sm:w-auto">
               <Button className="w-full sm:w-auto h-12 px-7 rounded-2xl bg-white text-slate-950 hover:bg-slate-100 font-black text-xs shadow-md transition-transform active:scale-95 border-0">
                 <Plus className="h-4 w-4 mr-1.5 text-primary" /> Fund Wallet
-              </Button>
-            </Link>
-            <Link href="/dashboard/services/buy-data" className="flex-1 sm:flex-initial">
-              <Button variant="outline" className="w-full sm:w-auto h-12 px-6 rounded-2xl bg-white/10 border-white/15 text-white hover:bg-white/20 font-bold text-xs transition-transform active:scale-95">
-                <ArrowUpRight className="h-4 w-4 mr-1.5" /> Transfer
               </Button>
             </Link>
           </div>

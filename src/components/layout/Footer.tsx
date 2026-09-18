@@ -55,9 +55,9 @@ export function Footer() {
             &copy; {new Date().getFullYear()} TSLA Technologies. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm text-slate-400 font-bold">
-            <span>Mock Application</span>
+            <span>Secure Digital Services & Marketplace</span>
             <span>•</span>
-            <span>Not a real financial entity</span>
+            <span>Automated Delivery</span>
           </div>
         </div>
       </div>

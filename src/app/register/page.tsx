@@ -278,7 +278,7 @@ export default function RegisterPage() {
                     className="pl-11 h-12 rounded-xl bg-primary/5 dark:bg-primary/10 border-primary/20 focus-visible:ring-primary/40 focus-visible:border-primary text-primary dark:text-indigo-400 font-black tracking-[0.5em]" 
                   />
                 </div>
-                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1">Used to authorize withdrawals & purchases</p>
+                <p className="text-[11px] font-bold text-slate-400 dark:text-slate-500 mt-1">Used to authorize purchases & orders</p>
               </div>
             </div>
 
@@ -302,7 +302,14 @@ export default function RegisterPage() {
                 )}
               </Button>
               <p className="text-xs text-center font-bold text-slate-400 dark:text-slate-500 mt-5">
-                By registering, you agree to our <span className="text-slate-900 dark:text-white underline cursor-pointer">Terms of Service</span> and <span className="text-slate-900 dark:text-white underline cursor-pointer">Privacy Policy</span>.
+                By registering, you agree to our{" "}
+                <Link href="/terms" target="_blank" className="text-slate-900 dark:text-white underline hover:text-primary">
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" target="_blank" className="text-slate-900 dark:text-white underline hover:text-primary">
+                  Privacy Policy
+                </Link>.
               </p>
             </div>
 
