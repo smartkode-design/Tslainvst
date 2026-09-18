@@ -272,7 +272,7 @@ export default function AdminProductsPage() {
               <AlertCircle className="h-4 w-4 text-amber-500" />
             </div>
             <div className="text-2xl font-black text-amber-500">
-              {products.filter((p) => p.stock === 0 || p.status === "disabled").length}
+              {products.filter((p) => p.stock === 0 || p.status === "disabled" || p.status === "sold" || p.status === "out_of_stock").length}
             </div>
             <p className="text-[11px] text-muted-foreground mt-1">Requires restock</p>
           </CardContent>

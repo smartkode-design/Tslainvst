@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
-  Search, Filter, Globe, ShoppingBag, Check, Copy, ShieldCheck, 
-  Zap, X, LayoutGrid, List, AlertCircle, ArrowRight, ExternalLink, 
-  Sparkles, Plus, Minus, CheckCircle2, ChevronRight 
+  Search, Globe, ShoppingBag, Check, Copy, ShieldCheck, 
+  Zap, X, LayoutGrid, List, AlertCircle, 
+  Plus, Minus, RefreshCw, ExternalLink, Wallet
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
-interface Product {
-  id: number;
+interface MarketplaceItem {
+  id: string;
   flag: string;
   country: string;
   stock: number;
@@ -21,245 +22,180 @@ interface Product {
   title: string;
   priceNum: number;
   price: string;
-  details: string;
+  description: string;
 }
 
 export default function MarketplacePage() {
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [userSession, setUserSession] = useState<any>(null);
+
+  // Products from live database
+  const [products, setProducts] = useState<MarketplaceItem[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   // Buy Checkout Modal State
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [buyQuantity, setBuyQuantity] = useState(1);
+  const [selectedProduct, setSelectedProduct] = useState<MarketplaceItem | null>(null);
   const [isProcessingBuy, setIsProcessingBuy] = useState(false);
   const [purchaseComplete, setPurchaseComplete] = useState(false);
+  const [deliveredCredentials, setDeliveredCredentials] = useState<string>("");
+  const [orderReference, setOrderReference] = useState<string>("");
+  const [buyError, setBuyError] = useState<string | null>(null);
   const [copiedCreds, setCopiedCreds] = useState(false);
 
-  // Fetch real wallet balance
-  useEffect(() => {
-    async function fetchBalance() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData?.session;
-      if (!session) return;
-      const { data: wallet } = await supabase
-        .from("wallets")
-        .select("balance")
-        .eq("user_id", session.user.id)
-        .single();
-      setWalletBalance(Number(wallet?.balance ?? 0));
-    }
-    fetchBalance();
+  // Fetch real wallet balance and session
+  const fetchBalance = useCallback(async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData?.session;
+    setUserSession(session);
+    if (!session) return;
+
+    const { data: wallet } = await supabase
+      .from("wallets")
+      .select("balance")
+      .eq("user_id", session.user.id)
+      .single();
+
+    setWalletBalance(Number(wallet?.balance ?? 0));
   }, []);
 
-
-
-  const categories = [
-    { name: "All", icon: "🔥", count: 1840 },
-    { name: "Google Voice", icon: "📞", count: 76 },
-    { name: "Facebook", icon: "📘", count: 420 },
-    { name: "VPNs", icon: "🛡️", count: 190 },
-    { name: "Google / Gmail", icon: "🔴", count: 512 },
-    { name: "Discord", icon: "💬", count: 140 },
-    { name: "AI Accounts", icon: "🤖", count: 95 },
-    { name: "Instagram", icon: "📸", count: 210 },
-    { name: "Twitter / X", icon: "🐦", count: 185 },
-    { name: "TikTok", icon: "🎵", count: 88 },
-  ];
-
-  const products: Product[] = [
-    {
-      id: 201,
-      flag: "https://flagcdn.com/w640/us.png",
-      country: "United States",
-      stock: 48,
-      platform: "GOOGLE VOICE",
-      category: "Google Voice",
-      title: "Google Voice (+1 USA) Aged 2023 · Clean IP + Gmail + Recovery",
-      priceNum: 5500,
-      price: "₦5,500",
-      details: "Gmail: gvoice_us992@gmail.com | Pass: Voice!2026Secure | Recovery: recov92@outlook.com | Voice#: +1 (415) 890-4122 | 2FA: JBSWY3DPEHPK3PXP"
-    },
-    {
-      id: 202,
-      flag: "https://flagcdn.com/w640/us.png",
-      country: "United States",
-      stock: 28,
-      platform: "GOOGLE VOICE",
-      category: "Google Voice",
-      title: "Google Voice (+1 USA Fresh) · High Carrier Trust + Full Access",
-      priceNum: 4200,
-      price: "₦4,200",
-      details: "Gmail: gv_fresh01@gmail.com | Pass: Fresh!Voice2026 | Recovery: fresh_rec@outlook.com | Voice#: +1 (646) 773-8910"
-    },
-    {
-      id: 1,
-      flag: "https://flagcdn.com/w640/au.png",
-      country: "Australia",
-      stock: 82,
-      platform: "FACEBOOK",
-      category: "Facebook",
-      title: "Facebook 2FA (Aged 90+ Days) · Hotmail Verified",
-      priceNum: 3680,
-      price: "₦3,680",
-      details: "Email: au_user991@hotmail.com | Pass: AusPass!2026 | 2FA: JBSWY3DPEHPK3PXP"
-    },
-    {
-      id: 2,
-      flag: "https://flagcdn.com/w640/kr.png",
-      country: "South Korea",
-      stock: 1009,
-      platform: "FACEBOOK",
-      category: "Facebook",
-      title: "Facebook 2FA (Aged 1-2 Years) · Korean IP with Cookies",
-      priceNum: 4500,
-      price: "₦4,500",
-      details: "Email: kim.minjun91@hotmail.com | Pass: K0r3a#Sec!2026 | 2FA: JBSWY3DPEHPK3PXP"
-    },
-    {
-      id: 3,
-      flag: "https://flagcdn.com/w640/eu.png",
-      country: "European Union",
-      stock: 1579,
-      platform: "FACEBOOK",
-      category: "Facebook",
-      title: "Facebook Europe IP (Aged 90+ Days) · Outlook Access",
-      priceNum: 3680,
-      price: "₦3,680",
-      details: "Email: eu_trade44@outlook.com | Pass: Eur0!2026Secure | 2FA: 4B6K2P7Q9X1Y3Z5"
-    },
-    {
-      id: 4,
-      flag: "https://flagcdn.com/w640/us.png",
-      country: "United States",
-      stock: 440,
-      platform: "VPNS",
-      category: "VPNs",
-      title: "NordVPN Premium (1 Year) · Auto-Renew on 6 Devices",
-      priceNum: 2150,
-      price: "₦2,150",
-      details: "User: tech_streamer@gmail.com | Pass: N0rd!Sec991 | Exp: Sep 2027"
-    },
-    {
-      id: 5,
-      flag: "https://flagcdn.com/w640/gb.png",
-      country: "United Kingdom",
-      stock: 688,
-      platform: "AI ACCOUNTS",
-      category: "AI Accounts",
-      title: "ChatGPT Plus (1 Month) · GPT-4o Dedicated Account",
-      priceNum: 15000,
-      price: "₦15,000",
-      details: "Email: gpt_pro_user@tsla.mail | Pass: OpenAi#99182 | Full Email Access"
-    },
-    {
-      id: 6,
-      flag: "https://flagcdn.com/w640/ca.png",
-      country: "Canada",
-      stock: 32,
-      platform: "DISCORD",
-      category: "Discord",
-      title: "Discord Token (1 Year Old) · Fully Verified Nitro Ready",
-      priceNum: 850,
-      price: "₦850",
-      details: "Token: mfa.Njk3ODkzOTk4OTAyNzIwOTk1.G2fK9A.4B8C1D9E7F5A3"
-    },
-    {
-      id: 7,
-      flag: "https://flagcdn.com/w640/hk.png",
-      country: "Hong Kong",
-      stock: 1894,
-      platform: "FACEBOOK",
-      category: "Facebook",
-      title: "Facebook HK IP (Aged 6+ Months) · 2FA Ads Manager Active",
-      priceNum: 4200,
-      price: "₦4,200",
-      details: "Email: hk_ads_pro@gmail.com | Pass: HK#AdManager2026 | 2FA: 9A8B7C6D5E4F"
-    },
-    {
-      id: 8,
-      flag: "https://flagcdn.com/w640/de.png",
-      country: "Germany",
-      stock: 512,
-      platform: "GOOGLE / GMAIL",
-      category: "Google / Gmail",
-      title: "Gmail Aged (2022) · German IP Clean History & Recovery",
-      priceNum: 1800,
-      price: "₦1,800",
-      details: "Email: klaus.weber22@gmail.com | Pass: D3utsch!P4ss | Recovery: rec_tsla@yahoo.com"
-    },
-    {
-      id: 9,
-      flag: "https://flagcdn.com/w640/us.png",
-      country: "United States",
-      stock: 320,
-      platform: "INSTAGRAM",
-      category: "Instagram",
-      title: "Instagram Aged PVA (2021) · Real Bio & Clean USA IP",
-      priceNum: 2400,
-      price: "₦2,400",
-      details: "User: usa_creator_99 | Pass: Insta#Pva2026 | Mail: ig_us99@hotmail.com"
-    },
-    {
-      id: 10,
-      flag: "https://flagcdn.com/w640/us.png",
-      country: "United States",
-      stock: 180,
-      platform: "TWITTER / X",
-      category: "Twitter / X",
-      title: "Twitter / X Aged (2020) · Instant Login Phone Verified",
-      priceNum: 3500,
-      price: "₦3,500",
-      details: "User: @x_verified_20 | Pass: Tw!tt3rSec | AuthToken: e7b19a820c8f"
-    },
-    {
-      id: 11,
-      flag: "https://flagcdn.com/w640/gb.png",
-      country: "United Kingdom",
-      stock: 94,
-      platform: "TIKTOK",
-      category: "TikTok",
-      title: "TikTok 1k+ Followers · Live Stream Studio Enabled",
-      priceNum: 8500,
-      price: "₦8,500",
-      details: "User: @uk_trends_live | Pass: T!kTokLive2026 | Mail: uk_live@outlook.com"
-    },
-    {
-      id: 12,
-      flag: "https://flagcdn.com/w640/us.png",
-      country: "United States",
-      stock: 215,
-      platform: "VPNS",
-      category: "VPNs",
-      title: "ExpressVPN Premium Account (1 Year) · Multi-Device",
-      priceNum: 2800,
-      price: "₦2,800",
-      details: "User: vpn_stream@gmail.com | Pass: Exp!Sec2026 | Code: 991820"
+  // Fetch real available products from database
+  const fetchProducts = useCallback(async () => {
+    setLoadingProducts(true);
+    try {
+      const res = await fetch("/api/marketplace/products");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.products)) {
+        setProducts(data.products);
+      }
+    } catch (err) {
+      console.error("Failed to load products:", err);
+    } finally {
+      setLoadingProducts(false);
     }
-  ];
+  }, []);
 
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = activeCategory === "All" || product.category.toLowerCase() === activeCategory.toLowerCase();
-    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          product.platform.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          product.country.toLowerCase().includes(searchQuery.toLowerCase());
+  useEffect(() => {
+    fetchBalance();
+    fetchProducts();
+  }, [fetchBalance, fetchProducts]);
+
+  // Categories list dynamically calculated from live products
+  const categoryNames = ["All", "Google Voice", "Facebook", "Instagram", "Twitter / X", "Gmail", "VPNs", "Discord", "AI Accounts", "TikTok"];
+  
+  const categories = categoryNames.map((name) => {
+    let count = 0;
+    if (name === "All") {
+      count = products.length;
+    } else {
+      count = products.filter((p) => 
+        p.category.toLowerCase().includes(name.toLowerCase()) || 
+        p.platform.toLowerCase().includes(name.toLowerCase())
+      ).length;
+    }
+
+    const iconMap: Record<string, string> = {
+      All: "🔥",
+      "Google Voice": "📞",
+      Facebook: "📘",
+      Instagram: "📸",
+      "Twitter / X": "🐦",
+      Gmail: "🔴",
+      VPNs: "🛡️",
+      Discord: "💬",
+      "AI Accounts": "🤖",
+      TikTok: "🎵",
+    };
+
+    return {
+      name,
+      icon: iconMap[name] || "📦",
+      count,
+    };
+  });
+
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory =
+      activeCategory === "All" ||
+      product.category.toLowerCase().includes(activeCategory.toLowerCase()) ||
+      product.platform.toLowerCase().includes(activeCategory.toLowerCase());
+
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      !searchQuery ||
+      product.title.toLowerCase().includes(q) ||
+      product.platform.toLowerCase().includes(q) ||
+      product.country.toLowerCase().includes(q);
+
     return matchesCategory && matchesSearch;
   });
 
-  const handleOpenBuy = (product: Product) => {
+  const handleOpenBuy = (product: MarketplaceItem) => {
+    if (!userSession) {
+      router.push("/login?redirect=/marketplace");
+      return;
+    }
     setSelectedProduct(product);
-    setBuyQuantity(1);
     setPurchaseComplete(false);
+    setDeliveredCredentials("");
+    setOrderReference("");
+    setBuyError(null);
     setCopiedCreds(false);
   };
 
-  const handleConfirmPurchase = () => {
+  const handleConfirmPurchase = async () => {
+    if (!selectedProduct) return;
+
+    const currentBal = walletBalance ?? 0;
+    if (currentBal < selectedProduct.priceNum) {
+      setBuyError(`Insufficient balance. You need ₦${(selectedProduct.priceNum - currentBal).toLocaleString()} more.`);
+      return;
+    }
+
     setIsProcessingBuy(true);
-    setTimeout(() => {
-      setIsProcessingBuy(false);
+    setBuyError(null);
+
+    try {
+      const token = userSession?.access_token;
+      const res = await fetch("/api/marketplace/buy", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          logId: selectedProduct.id,
+          userId: userSession?.user?.id,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to purchase account. Please try again.");
+      }
+
+      // Success: update balance, set credentials, update UI
+      setDeliveredCredentials(data.formattedCredentials || JSON.stringify(data.credentials, null, 2));
+      setOrderReference(data.reference || data.orderId || "COMPLETED");
+      if (typeof data.newBalance === "number") {
+        setWalletBalance(data.newBalance);
+      } else {
+        await fetchBalance();
+      }
       setPurchaseComplete(true);
-    }, 1200);
+
+      // Refresh products so sold log is removed from catalog
+      fetchProducts();
+    } catch (err: any) {
+      console.error("Purchase error:", err);
+      setBuyError(err.message || "An unexpected error occurred during purchase.");
+    } finally {
+      setIsProcessingBuy(false);
+    }
   };
 
   const handleCopyCredentials = (text: string) => {
@@ -270,7 +206,7 @@ export default function MarketplacePage() {
 
   return (
     <div className="space-y-4 sm:space-y-6 pb-28 md:pb-12 max-w-7xl mx-auto px-1 sm:px-4">
-      {/* Header (Clean, High-Converting Mobile & Desktop Header) */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
         <div>
           <div className="flex items-center gap-2">
@@ -288,10 +224,15 @@ export default function MarketplacePage() {
 
         {/* Live Wallet & Guarantee Ticker */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-          <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 shrink-0">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Wallet: {walletBalance === null ? "Loading..." : `₦${new Intl.NumberFormat("en-NG", { minimumFractionDigits: 2 }).format(walletBalance)}`}</span>
-          </div>
+          <Link href="/dashboard/wallet/fund">
+            <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/80 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 shrink-0 hover:bg-emerald-100 transition-colors">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>
+                Wallet: {walletBalance === null ? "..." : `₦${new Intl.NumberFormat("en-NG", { minimumFractionDigits: 2 }).format(walletBalance)}`}
+              </span>
+              <Plus className="h-3 w-3 ml-1 text-emerald-600" />
+            </div>
+          </Link>
           <div className="bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 shrink-0">
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
             <span>24h Replacement</span>
@@ -320,7 +261,7 @@ export default function MarketplacePage() {
           )}
         </div>
 
-        {/* View Mode Switcher (Grid vs List on mobile) */}
+        {/* View Mode Switcher */}
         <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0">
           <button
             onClick={() => setViewMode("grid")}
@@ -347,7 +288,7 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      {/* Category Pills (Horizontal Native Scroll) */}
+      {/* Category Pills */}
       <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 scrollbar-none -mx-1 px-1">
         {categories.map((cat) => (
           <button
@@ -370,21 +311,40 @@ export default function MarketplacePage() {
         ))}
       </div>
 
+      {/* Loading state */}
+      {loadingProducts && (
+        <div className="p-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center gap-3">
+          <RefreshCw className="h-6 w-6 animate-spin text-primary" />
+          <p className="text-xs font-bold text-slate-500">Connecting to real database inventory...</p>
+        </div>
+      )}
+
       {/* No products found */}
-      {filteredProducts.length === 0 && (
+      {!loadingProducts && filteredProducts.length === 0 && (
         <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3">
-          <p className="text-base font-bold text-slate-900 dark:text-white">No accounts found matching "{searchQuery}"</p>
-          <p className="text-xs text-slate-500">Try searching for a different platform, country, or category.</p>
-          <Button onClick={() => { setSearchQuery(""); setActiveCategory("All"); }} variant="outline" className="text-xs font-bold">
-            Reset Filters
-          </Button>
+          <div className="h-12 w-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center">
+            <ShoppingBag className="h-6 w-6" />
+          </div>
+          <p className="text-base font-bold text-slate-900 dark:text-white">
+            {products.length === 0 ? "No Accounts Currently in Stock" : `No accounts found matching "${searchQuery}"`}
+          </p>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            {products.length === 0 
+              ? "New aged accounts, Google Voice numbers, and VPN tokens are uploaded by admins daily. Check back shortly!"
+              : "Try searching for a different platform, country, or category."}
+          </p>
+          {products.length > 0 && (
+            <Button onClick={() => { setSearchQuery(""); setActiveCategory("All"); }} variant="outline" className="text-xs font-bold">
+              Reset Filters
+            </Button>
+          )}
         </div>
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* 1. GRID VIEW: High-Density 2-Column on Mobile, 4-Col Desktop */}
+      {/* 1. GRID VIEW                                                  */}
       {/* ------------------------------------------------------------- */}
-      {viewMode === "grid" && (
+      {!loadingProducts && viewMode === "grid" && filteredProducts.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4">
           {filteredProducts.map((product) => (
             <div 
@@ -400,15 +360,15 @@ export default function MarketplacePage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/30 pointer-events-none" />
 
-                {/* Country / Route Badge (Top Left) */}
+                {/* Country Badge */}
                 <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm text-white px-2 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold flex items-center gap-1 shadow-xs border border-white/10">
                   <Globe className="h-3 w-3" />
                   <span className="truncate max-w-[65px] sm:max-w-none">{product.country}</span>
                 </div>
 
-                {/* Stock Badge (Top Right) */}
+                {/* Stock Badge */}
                 <div className="absolute top-2 right-2 bg-emerald-500 text-white px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold shadow-xs">
-                  <span>{product.stock} left</span>
+                  <span>Available</span>
                 </div>
               </div>
 
@@ -443,16 +403,15 @@ export default function MarketplacePage() {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* 2. LIST VIEW: High-Density Row Cards (Best for fast scrolling) */}
+      {/* 2. LIST VIEW                                                  */}
       {/* ------------------------------------------------------------- */}
-      {viewMode === "list" && (
+      {!loadingProducts && viewMode === "list" && filteredProducts.length > 0 && (
         <div className="space-y-2 sm:space-y-3">
           {filteredProducts.map((product) => (
             <div 
               key={product.id}
               className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3 sm:p-4 shadow-xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all flex items-center justify-between gap-3 group"
             >
-              {/* Flag Avatar & Details */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shrink-0 relative bg-slate-950">
                   <img src={product.flag} alt={product.country} className="w-full h-full object-cover" />
@@ -467,7 +426,7 @@ export default function MarketplacePage() {
                       {product.platform}
                     </span>
                     <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.2 rounded">
-                      {product.stock} in stock
+                      In Stock
                     </span>
                   </div>
                   <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-snug truncate mt-0.5 group-hover:text-primary dark:group-hover:text-indigo-400 transition-colors">
@@ -476,7 +435,6 @@ export default function MarketplacePage() {
                 </div>
               </div>
 
-              {/* Price & Buy Action */}
               <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                 <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight">
                   {product.price}
@@ -496,7 +454,7 @@ export default function MarketplacePage() {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* 3. INTERACTIVE BUY CHECKOUT MODAL / MOBILE BOTTOM SHEET       */}
+      {/* 3. REAL SECURE CHECKOUT MODAL                                 */}
       {/* ------------------------------------------------------------- */}
       {selectedProduct && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -509,7 +467,7 @@ export default function MarketplacePage() {
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 <h3 className="font-black text-slate-900 dark:text-white text-base">
-                  {purchaseComplete ? "Order Fulfilled!" : "Confirm Purchase"}
+                  {purchaseComplete ? "Log Delivered Successfully!" : "Confirm Purchase"}
                 </h3>
               </div>
               <button 
@@ -530,90 +488,111 @@ export default function MarketplacePage() {
                   <div className="min-w-0 flex-1">
                     <span className="text-[10px] font-black text-amber-500 uppercase tracking-wider">{selectedProduct.platform}</span>
                     <p className="font-bold text-xs text-slate-900 dark:text-white line-clamp-1">{selectedProduct.title}</p>
-                    <p className="text-[11px] font-extrabold text-primary dark:text-indigo-400 mt-0.5">{selectedProduct.price} each</p>
+                    <p className="text-[11px] font-extrabold text-primary dark:text-indigo-400 mt-0.5">{selectedProduct.price}</p>
                   </div>
                 </div>
 
-                {/* Quantity Selector */}
-                <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700">
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Quantity</span>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setBuyQuantity(Math.max(1, buyQuantity - 1))}
-                      className="h-8 w-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold flex items-center justify-center text-slate-700 dark:text-slate-200 active:scale-95"
-                    >
-                      <Minus className="h-3.5 w-3.5" />
-                    </button>
-                    <span className="text-sm font-black text-slate-900 dark:text-white font-mono w-6 text-center">
-                      {buyQuantity}
-                    </span>
-                    <button
-                      onClick={() => setBuyQuantity(Math.min(selectedProduct.stock, buyQuantity + 1))}
-                      className="h-8 w-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-bold flex items-center justify-center text-slate-700 dark:text-slate-200 active:scale-95"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Wallet Balance & Total Calculation */}
-                <div className="space-y-2 pt-1">
+                {/* Wallet Balance & Cost Breakdown */}
+                <div className="space-y-2 pt-1 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/80 dark:border-slate-700">
                   <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
-                    <span>Available Wallet Balance</span>
+                    <span className="flex items-center gap-1.5">
+                      <Wallet className="h-3.5 w-3.5" /> Your Wallet Balance
+                    </span>
                     <span className="font-bold text-slate-900 dark:text-white font-mono">
                       {walletBalance === null ? "..." : `₦${new Intl.NumberFormat("en-NG", { minimumFractionDigits: 2 }).format(walletBalance)}`}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs font-medium text-slate-500 dark:text-slate-400">
-                    <span>Rate (×{buyQuantity})</span>
-                    <span>₦{(selectedProduct.priceNum * buyQuantity).toLocaleString()}</span>
+                    <span>Item Price</span>
+                    <span className="font-bold font-mono">₦{selectedProduct.priceNum.toLocaleString()}</span>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-sm">
-                    <span className="font-extrabold text-slate-900 dark:text-white">Total Charge</span>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700 text-sm">
+                    <span className="font-extrabold text-slate-900 dark:text-white">Amount to Deduct</span>
                     <span className="text-xl font-black text-primary dark:text-indigo-400 font-mono">
-                      ₦{(selectedProduct.priceNum * buyQuantity).toLocaleString()}
+                      ₦{selectedProduct.priceNum.toLocaleString()}
                     </span>
                   </div>
                 </div>
 
-                {/* Action Trigger */}
-                <Button 
-                  onClick={handleConfirmPurchase}
-                  disabled={isProcessingBuy}
-                  className="w-full h-13 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-sm shadow-lg shadow-primary/25 transition-transform active:scale-95 flex items-center justify-center gap-2"
-                >
-                  {isProcessingBuy ? (
-                    <span>Processing Payment...</span>
-                  ) : (
-                    <>
-                      <Zap className="h-4 w-4" />
-                      Confirm & Deduct ₦{(selectedProduct.priceNum * buyQuantity).toLocaleString()}
-                    </>
-                  )}
-                </Button>
+                {/* Insufficient Funds Warning */}
+                {(walletBalance ?? 0) < selectedProduct.priceNum && (
+                  <div className="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 space-y-2 text-xs">
+                    <div className="flex items-center gap-2 text-red-700 dark:text-red-400 font-bold">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>Insufficient Wallet Balance</span>
+                    </div>
+                    <p className="text-red-600 dark:text-red-300">
+                      You need <strong>₦{(selectedProduct.priceNum - (walletBalance ?? 0)).toLocaleString()}</strong> more to complete this purchase.
+                    </p>
+                    <Link href="/dashboard/wallet/fund" className="block pt-1">
+                      <Button className="w-full h-10 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs">
+                        Fund Wallet Now
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+
+                {buyError && (
+                  <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-xs font-semibold">
+                    {buyError}
+                  </div>
+                )}
+
+                {/* Purchase Action Button */}
+                {(walletBalance ?? 0) >= selectedProduct.priceNum ? (
+                  <Button 
+                    onClick={handleConfirmPurchase}
+                    disabled={isProcessingBuy}
+                    className="w-full h-13 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-sm shadow-lg shadow-primary/25 transition-transform active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    {isProcessingBuy ? (
+                      <span className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin" /> Verifying & Deducting Balance...
+                      </span>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4" />
+                        Confirm & Pay ₦{selectedProduct.priceNum.toLocaleString()}
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button 
+                    disabled
+                    className="w-full h-13 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-black text-sm cursor-not-allowed"
+                  >
+                    Cannot Purchase — Fund Wallet First
+                  </Button>
+                )}
               </>
             ) : (
-              /* Success / Delivered Credentials HUD */
+              /* Success / REAL Delivered Credentials HUD */
               <div className="space-y-5 animate-in zoom-in-95 duration-200">
                 <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/60 text-center space-y-1">
                   <div className="h-10 w-10 rounded-full bg-emerald-500 text-white mx-auto flex items-center justify-center shadow-md shadow-emerald-500/20">
                     <Check className="h-5 w-5 stroke-[3]" />
                   </div>
                   <h4 className="font-black text-slate-900 dark:text-white text-base pt-1">Purchase Successful!</h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Order ID #LOG-{Math.floor(Math.random()*90000)+10000} has been credited to your account.</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+                    Ref #{orderReference} · ₦{selectedProduct.priceNum.toLocaleString()} deducted
+                  </p>
                 </div>
 
-                {/* Delivered Credentials Card */}
+                {/* Real Delivered Credentials Card */}
                 <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Your Account Credentials</span>
-                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded">Saved in Orders</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      Your Account Credentials
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded">
+                      Saved in Orders
+                    </span>
                   </div>
-                  <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-200 break-all leading-relaxed">
-                    {selectedProduct.details}
-                  </div>
+                  <pre className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 font-mono text-xs text-slate-800 dark:text-slate-200 break-all leading-relaxed whitespace-pre-wrap">
+                    {deliveredCredentials}
+                  </pre>
                   <Button 
-                    onClick={() => handleCopyCredentials(selectedProduct.details)}
+                    onClick={() => handleCopyCredentials(deliveredCredentials)}
                     className="w-full h-10 rounded-xl bg-slate-900 dark:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-1.5"
                   >
                     {copiedCreds ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
@@ -632,7 +611,7 @@ export default function MarketplacePage() {
                     onClick={() => setSelectedProduct(null)}
                     className="flex-1 h-12 rounded-xl bg-primary text-white font-bold text-xs"
                   >
-                    Continue Shopping
+                    Done
                   </Button>
                 </div>
               </div>

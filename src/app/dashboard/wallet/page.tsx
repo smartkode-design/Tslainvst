@@ -26,6 +26,7 @@ export default function WalletPage() {
   const [activeTab, setActiveTab] = useState<"all" | "inflow" | "outflow">("all");
   const [balance, setBalance] = useState<number | null>(null);
   const [userName, setUserName] = useState<string>("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   // Verification state for redirect returns (e.g. from Paystack)
@@ -59,11 +60,50 @@ export default function WalletPage() {
     setUserName(fullName.split(" ")[0]);
     setBalance(Number(wallet?.balance ?? 0));
     setTransactions(txns ?? []);
+    setCurrentUserId(userId);
   }, [router]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Realtime subscription for instant balance & ledger updates
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const channel = supabase
+      .channel(`user-wallet-${currentUserId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "wallets",
+          filter: `user_id=eq.${currentUserId}`,
+        },
+        () => {
+          loadData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "transactions",
+          filter: `user_id=eq.${currentUserId}`,
+        },
+        () => {
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId, loadData]);
+
 
   // Handle Paystack callback reference
   useEffect(() => {
