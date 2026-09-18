@@ -1,11 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Plus, ArrowDownLeft, ShieldCheck, History } from "lucide-react";
+import { ArrowUpRight, Plus, ArrowDownLeft, ShieldCheck, History, CheckCircle2, AlertCircle, Loader2, Zap } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 function formatNaira(amount: number): string {
   return new Intl.NumberFormat("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
@@ -22,35 +22,103 @@ interface Transaction {
 
 export default function WalletPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<"all" | "inflow" | "outflow">("all");
   const [balance, setBalance] = useState<number | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  useEffect(() => {
-    async function loadData() {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData?.session;
-      if (!session) { router.replace("/login"); return; }
+  // Verification state for redirect returns (e.g. from Paystack)
+  const [verifying, setVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
-      const userId = session.user.id;
-      const [{ data: profile }, { data: wallet }, { data: txns }] = await Promise.all([
-        supabase.from("profiles").select("full_name").eq("id", userId).single(),
-        supabase.from("wallets").select("balance").eq("user_id", userId).single(),
-        supabase.from("transactions").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20),
-      ]);
-
-      const fullName = profile?.full_name || session.user.email?.split("@")[0] || "User";
-      setUserName(fullName.split(" ")[0]);
-      setBalance(Number(wallet?.balance ?? 0));
-      setTransactions(txns ?? []);
+  const loadData = useCallback(async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData?.session;
+    if (!session) {
+      router.replace("/login");
+      return;
     }
-    loadData();
+
+    const userId = session.user.id;
+    const [{ data: profile }, { data: wallet }, { data: txns }] = await Promise.all([
+      supabase.from("profiles").select("full_name").eq("id", userId).single(),
+      supabase.from("wallets").select("balance").eq("user_id", userId).single(),
+      supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ]);
+
+    const fullName = profile?.full_name || session.user.email?.split("@")[0] || "User";
+    setUserName(fullName.split(" ")[0]);
+    setBalance(Number(wallet?.balance ?? 0));
+    setTransactions(txns ?? []);
   }, [router]);
 
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Handle Paystack callback reference
+  useEffect(() => {
+    const reference = searchParams.get("reference") || searchParams.get("trxref");
+    if (!reference) return;
+
+    let isMounted = true;
+    async function verifyPayment(ref: string) {
+      setVerifying(true);
+      try {
+        const res = await fetch(`/api/wallet/paystack/verify?reference=${encodeURIComponent(ref)}`);
+        const data = await res.json();
+
+        if (isMounted) {
+          if (res.ok && data.success) {
+            setVerificationResult({
+              success: true,
+              message: data.alreadyProcessed
+                ? `Deposit already credited to your wallet.`
+                : `Payment successful! ₦${(data.amount || 0).toLocaleString()} credited to your wallet.`,
+            });
+            await loadData();
+          } else {
+            setVerificationResult({
+              success: false,
+              message: data.error || "Could not verify payment status.",
+            });
+          }
+        }
+      } catch (err: any) {
+        if (isMounted) {
+          setVerificationResult({
+            success: false,
+            message: err.message || "Network error while verifying payment.",
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setVerifying(false);
+          // Clean URL without retriggering
+          window.history.replaceState({}, "", "/dashboard/wallet");
+        }
+      }
+    }
+
+    verifyPayment(reference);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [searchParams, loadData]);
+
   const filteredTxns = transactions.filter((t) => {
-    if (activeTab === "inflow") return t.type === "credit" || t.type === "inflow";
-    if (activeTab === "outflow") return t.type === "debit" || t.type === "outflow";
+    if (activeTab === "inflow") return t.type === "credit" || t.type === "inflow" || t.type === "deposit";
+    if (activeTab === "outflow") return t.type === "debit" || t.type === "outflow" || t.type === "purchase";
     return true;
   });
 
@@ -70,6 +138,39 @@ export default function WalletPage() {
           </Button>
         </Link>
       </div>
+
+      {/* Verification Notification Banner */}
+      {verifying && (
+        <div className="p-4 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 rounded-2xl flex items-center gap-3 text-blue-800 dark:text-blue-300 text-xs font-semibold animate-pulse">
+          <Loader2 className="h-5 w-5 animate-spin shrink-0 text-blue-600" />
+          <span>Verifying payment with Paystack... Please wait a moment.</span>
+        </div>
+      )}
+
+      {verificationResult && (
+        <div
+          className={`p-4 rounded-2xl border flex items-center justify-between gap-3 text-xs font-semibold ${
+            verificationResult.success
+              ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
+              : "bg-red-50 dark:bg-red-950/50 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {verificationResult.success ? (
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
+            )}
+            <span>{verificationResult.message}</span>
+          </div>
+          <button
+            onClick={() => setVerificationResult(null)}
+            className="text-xs opacity-60 hover:opacity-100 font-bold underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Balance Hero Card */}
       <div className="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-900/10 relative overflow-hidden border border-slate-800">
@@ -107,31 +208,24 @@ export default function WalletPage() {
         </div>
       </div>
 
-      {/* Virtual Bank Account — Real user name */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+      {/* Quick Fund Promo Card */}
+      <div className="bg-gradient-to-r from-primary/10 via-indigo-500/10 to-transparent dark:from-primary/20 dark:via-indigo-500/20 dark:to-transparent rounded-3xl border border-primary/20 p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-primary text-white flex items-center justify-center shrink-0 shadow-md shadow-primary/30">
+            <Zap className="h-5 w-5" />
+          </div>
           <div>
-            <h3 className="font-black text-slate-900 dark:text-white text-sm tracking-wide">Dedicated Virtual Bank Account</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Direct transfers to this account automatically fund your wallet instantly</p>
-          </div>
-          <Link href="/dashboard/wallet/fund" className="text-xs font-bold text-primary dark:text-indigo-400 hover:underline">Change Bank</Link>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/60 space-y-1">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Bank Name</span>
-            <p className="text-sm font-black text-slate-900 dark:text-white">Palmpay</p>
-          </div>
-          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/60 space-y-1">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Account Number</span>
-            <p className="text-base font-black text-slate-900 dark:text-white font-mono tracking-wider">—</p>
-          </div>
-          <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-700/60 space-y-1">
-            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Account Name</span>
-            <p className="text-sm font-black text-slate-900 dark:text-white">
-              {userName ? `TSLA - ${userName}` : "Loading..."}
+            <h4 className="text-sm font-black text-slate-900 dark:text-white">Instant Online Wallet Funding</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              Deposit instantly via Bank Transfer, Debit Cards (Visa/Mastercard), or USSD
             </p>
           </div>
         </div>
+        <Link href="/dashboard/wallet/fund" className="w-full sm:w-auto">
+          <Button size="sm" className="w-full sm:w-auto rounded-xl font-black text-xs h-10 px-5 shadow-sm">
+            Fund Instantly
+          </Button>
+        </Link>
       </div>
 
       {/* Wallet Ledger */}
@@ -164,7 +258,7 @@ export default function WalletPage() {
         ) : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {filteredTxns.map((item) => {
-              const isCredit = item.type === "credit" || item.type === "inflow";
+              const isCredit = item.type === "credit" || item.type === "inflow" || item.type === "deposit";
               const date = new Date(item.created_at).toLocaleDateString("en-NG", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
               return (
                 <div key={item.id} className="py-4 flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 px-2 rounded-2xl transition-colors">
