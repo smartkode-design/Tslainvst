@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { TransactionPinModal } from "@/components/TransactionPinModal";
 
 interface MarketplaceItem {
   id: string;
@@ -45,6 +46,7 @@ export default function MarketplacePage() {
   const [orderReference, setOrderReference] = useState<string>("");
   const [buyError, setBuyError] = useState<string | null>(null);
   const [copiedCreds, setCopiedCreds] = useState(false);
+  const [pinModalOpen, setPinModalOpen] = useState(false);
 
   // Fetch real wallet balance and session
   const fetchBalance = useCallback(async () => {
@@ -146,7 +148,7 @@ export default function MarketplacePage() {
     setCopiedCreds(false);
   };
 
-  const handleConfirmPurchase = async () => {
+  const handleOpenPinModal = () => {
     if (!selectedProduct) return;
 
     const currentBal = walletBalance ?? 0;
@@ -154,6 +156,12 @@ export default function MarketplacePage() {
       setBuyError(`Insufficient balance. You need ₦${(selectedProduct.priceNum - currentBal).toLocaleString()} more.`);
       return;
     }
+    setBuyError(null);
+    setPinModalOpen(true);
+  };
+
+  const executePurchase = async () => {
+    if (!selectedProduct) return;
 
     setIsProcessingBuy(true);
     setBuyError(null);
@@ -541,7 +549,7 @@ export default function MarketplacePage() {
                 {/* Purchase Action Button */}
                 {(walletBalance ?? 0) >= selectedProduct.priceNum ? (
                   <Button 
-                    onClick={handleConfirmPurchase}
+                    onClick={handleOpenPinModal}
                     disabled={isProcessingBuy}
                     className="w-full h-13 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-sm shadow-lg shadow-primary/25 transition-transform active:scale-95 flex items-center justify-center gap-2"
                   >
@@ -619,6 +627,17 @@ export default function MarketplacePage() {
           </div>
         </div>
       )}
+
+      {/* 4-Digit Security PIN Modal */}
+      <TransactionPinModal
+        isOpen={pinModalOpen}
+        onClose={() => setPinModalOpen(false)}
+        onSuccess={executePurchase}
+        amountNGN={selectedProduct?.priceNum || 0}
+        description={`Buy Log: ${selectedProduct?.title || "Account"}`}
+        userId={userSession?.user?.id}
+        authToken={userSession?.access_token}
+      />
     </div>
   );
 }

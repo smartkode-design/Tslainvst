@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { useAuth } from "../../layout";
 import { calculateSmsPrice, isServiceSupportedInCountry } from "@/lib/pricing";
+import { TransactionPinModal } from "@/components/TransactionPinModal";
 
 export default function ServicePage({ params }: { params: { slug: string } }) {
   const router = useRouter();
@@ -74,6 +75,12 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [notes, setNotes] = useState("");
   const [affiliateSubmitted, setAffiliateSubmitted] = useState(false);
+
+  // --- Security 4-Digit PIN Modal State ---
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
+  const [pinModalAmount, setPinModalAmount] = useState<number>(0);
+  const [pinModalDesc, setPinModalDesc] = useState<string>("");
 
   // --- Dynamic Pricing from Admin ---
   const [dynamicPricing, setDynamicPricing] = useState<Record<string, number>>({});
@@ -1274,37 +1281,42 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
               </div>
               <Button
                 disabled={isGeneratingNumber}
-                onClick={async () => {
+                onClick={() => {
                   if ((wallet?.balance ?? 0) < activeOrderRate) {
                     setSmsError(`Insufficient balance. Required: ₦${activeOrderRate.toLocaleString()}. Please fund your wallet.`);
                     return;
                   }
                   setSmsError(null);
-                  setIsGeneratingNumber(true);
-                  try {
-                    const res = await fetch("/api/services/sms/buy", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        userId: user?.id,
-                        country: selectedOtpCountry,
-                        service: selectedOtpService,
-                      }),
-                    });
-                    const data = await res.json();
-                    if (!res.ok) {
-                      throw new Error(data.error || "Failed to acquire phone number");
+                  setPinModalAmount(activeOrderRate);
+                  setPinModalDesc(`Virtual Number: ${activeServiceObj.name} (${activeCountryObj.name})`);
+                  setPendingAction(() => async () => {
+                    setIsGeneratingNumber(true);
+                    try {
+                      const res = await fetch("/api/services/sms/buy", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          userId: user?.id,
+                          country: selectedOtpCountry,
+                          service: selectedOtpService,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) {
+                        throw new Error(data.error || "Failed to acquire phone number");
+                      }
+                      setGeneratedPhone(data.phone || `+${activeCountryObj.code.replace('+', '')} 812 ${Math.floor(100000 + Math.random() * 900000)}`);
+                      setSmsOrderId(data.orderId || `SMS_${Date.now()}`);
+                      setHasGeneratedNumber(true);
+                      setSmsReceived(false);
+                      setSmsTimer(1185);
+                    } catch (err: any) {
+                      setSmsError(err.message || "Failed to generate number. Please check your balance.");
+                    } finally {
+                      setIsGeneratingNumber(false);
                     }
-                    setGeneratedPhone(data.phone || `+${activeCountryObj.code.replace('+', '')} 812 ${Math.floor(100000 + Math.random() * 900000)}`);
-                    setSmsOrderId(data.orderId || `SMS_${Date.now()}`);
-                    setHasGeneratedNumber(true);
-                    setSmsReceived(false);
-                    setSmsTimer(1185);
-                  } catch (err: any) {
-                    setSmsError(err.message || "Failed to generate number. Please check your balance.");
-                  } finally {
-                    setIsGeneratingNumber(false);
-                  }
+                  });
+                  setPinModalOpen(true);
                 }}
                 className="w-full sm:w-auto h-13 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black shadow-lg shadow-primary/25 transition-transform active:scale-95 flex items-center justify-center gap-2"
               >
@@ -1425,6 +1437,23 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             </div>
           </div>
         )}
+
+        {/* Security Transaction PIN Modal */}
+        <TransactionPinModal
+          isOpen={pinModalOpen}
+          onClose={() => {
+            setPinModalOpen(false);
+            setPendingAction(null);
+          }}
+          onSuccess={async () => {
+            if (pendingAction) {
+              await pendingAction();
+            }
+          }}
+          amountNGN={pinModalAmount}
+          description={pinModalDesc}
+          userId={user?.id}
+        />
       </div>
     );
   }
@@ -1628,7 +1657,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
           ) : (
             <Button 
               disabled={isSubmittingSmm}
-              onClick={async () => {
+              onClick={() => {
                 if (!smmLink.trim()) {
                   setSmmError("Please enter your target profile or post URL.");
                   return;
@@ -1643,29 +1672,34 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                   return;
                 }
                 setSmmError(null);
-                setIsSubmittingSmm(true);
-                try {
-                  const res = await fetch("/api/services/smm/order", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      userId: user?.id,
-                      serviceId: activeService.id,
-                      link: smmLink.trim(),
-                      quantity: qty,
-                    }),
-                  });
-                  const data = await res.json();
-                  if (!res.ok) {
-                    throw new Error(data.error || "Failed to place SMM boost order");
+                setPinModalAmount(Math.round(totalPrice));
+                setPinModalDesc(`SMM Boost: ${activeService.name} (${qty.toLocaleString()} units)`);
+                setPendingAction(() => async () => {
+                  setIsSubmittingSmm(true);
+                  try {
+                    const res = await fetch("/api/services/smm/order", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        userId: user?.id,
+                        serviceId: activeService.id,
+                        link: smmLink.trim(),
+                        quantity: qty,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                      throw new Error(data.error || "Failed to place SMM boost order");
+                    }
+                    setSmmPlacedOrder(data);
+                    setSmmSuccess(true);
+                  } catch (err: any) {
+                    setSmmError(err.message || "Failed to submit order. Please check balance.");
+                  } finally {
+                    setIsSubmittingSmm(false);
                   }
-                  setSmmPlacedOrder(data);
-                  setSmmSuccess(true);
-                } catch (err: any) {
-                  setSmmError(err.message || "Failed to submit order. Please check balance.");
-                } finally {
-                  setIsSubmittingSmm(false);
-                }
+                });
+                setPinModalOpen(true);
               }}
               className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-base shadow-lg shadow-primary/25 transition-transform active:scale-95 flex items-center justify-center gap-2"
             >
@@ -1680,6 +1714,23 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             </Button>
           )}
         </div>
+
+        {/* Security Transaction PIN Modal */}
+        <TransactionPinModal
+          isOpen={pinModalOpen}
+          onClose={() => {
+            setPinModalOpen(false);
+            setPendingAction(null);
+          }}
+          onSuccess={async () => {
+            if (pendingAction) {
+              await pendingAction();
+            }
+          }}
+          amountNGN={pinModalAmount}
+          description={pinModalDesc}
+          userId={user?.id}
+        />
       </div>
     );
   }
@@ -1721,14 +1772,19 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Instant 24/7 automated data bundle delivery</p>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full text-xs font-bold">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>2% Cashback Active</span>
+          <div className="hidden sm:flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full text-xs font-black uppercase">
+            <Clock className="h-3.5 w-3.5" />
+            <span>Coming Soon</span>
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-7 shadow-sm space-y-6">
-          <div className="space-y-2.5">
+          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-semibold flex items-center gap-2.5">
+            <Clock className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>Data bundle automated delivery is currently being upgraded and will launch soon. In the meantime, use our live Virtual Numbers, SMM Boosts, and Social Logs!</span>
+          </div>
+
+          <div className="space-y-2.5 opacity-60 pointer-events-none">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Select Network Provider</label>
             <div className="grid grid-cols-4 gap-2.5">
               {networks.map((net) => (
@@ -1751,7 +1807,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 opacity-60 pointer-events-none">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Recipient Phone Number</label>
             <Input 
               value={phoneNumber}
@@ -1761,7 +1817,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             />
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 opacity-60 pointer-events-none">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Select Data Plan</label>
               <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
@@ -1806,10 +1862,10 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
           </div>
 
           <Button 
-            onClick={() => setIsSuccess(true)}
-            className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-base shadow-lg shadow-primary/25"
+            disabled
+            className="w-full h-14 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-black text-base cursor-not-allowed"
           >
-            {isSuccess ? "Delivery Complete!" : `Pay ${dataPlans.find(p => p.id === dataPlan)?.price || "₦280"}`}
+            Coming Soon
           </Button>
         </div>
       </div>
@@ -1829,21 +1885,32 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
 
     return (
       <div className="max-w-2xl mx-auto space-y-6 pb-24 md:pb-12 pt-2 md:pt-4 px-4">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => router.back()}
-            className="h-10 w-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5 text-slate-700 dark:text-slate-200" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Buy Airtime</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Instant top-up with up to 3% discount</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => router.back()}
+              className="h-10 w-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-800 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5 text-slate-700 dark:text-slate-200" />
+            </button>
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Buy Airtime</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Instant top-up with up to 3% discount</p>
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-3 py-1 rounded-full text-xs font-black uppercase">
+            <Clock className="h-3.5 w-3.5" />
+            <span>Coming Soon</span>
           </div>
         </div>
 
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-7 shadow-sm space-y-6">
-          <div className="space-y-2.5">
+          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs font-semibold flex items-center gap-2.5">
+            <Clock className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>Airtime top-up automated delivery is currently being upgraded and will launch soon. In the meantime, use our live Virtual Numbers, SMM Boosts, and Social Logs!</span>
+          </div>
+
+          <div className="space-y-2.5 opacity-60 pointer-events-none">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Select Network</label>
             <div className="grid grid-cols-4 gap-2.5">
               {networks.map((net) => (
@@ -1863,7 +1930,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 opacity-60 pointer-events-none">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Phone Number</label>
             <Input 
               value={phoneNumber}
@@ -1873,7 +1940,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             />
           </div>
 
-          <div className="space-y-2.5">
+          <div className="space-y-2.5 opacity-60 pointer-events-none">
             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Amount (₦)</label>
             <Input 
               value={airtimeAmount}
@@ -1900,10 +1967,10 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
           </div>
 
           <Button 
-            onClick={() => setIsSuccess(true)}
-            className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-base shadow-lg shadow-primary/25"
+            disabled
+            className="w-full h-14 rounded-2xl bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 font-black text-base cursor-not-allowed"
           >
-            {isSuccess ? "Recharge Complete!" : `Recharge ₦${airtimeAmount || "0"}`}
+            Coming Soon
           </Button>
         </div>
       </div>
@@ -1914,6 +1981,15 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   // 5. AFFILIATE WEBSITE LEAD GEN FLOW (Primex Reference)
   // -------------------------------------------------------------
   if (slug.includes("affiliate")) {
+    const handleAffiliateWhatsAppOrder = () => {
+      const fullSite = `www.${domainName.trim() || "mybrand"}${selectedDomain}`;
+      const price = selectedDomain === ".com" ? "₦400,000" : selectedDomain === ".ng" ? "₦360,000" : "₦320,000";
+      const message = `Hello TSLA Engineering,\n\nI want to order an Affiliate Website:\n🌐 Domain: ${fullSite}\n📦 Package: ${selectedDomain} (${price})\n📱 Contact Phone/WhatsApp: ${whatsappNumber.trim() || "Not specified"}\n\nPlease confirm setup details and payment instructions.`;
+      const waUrl = `https://wa.me/2348114491126?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, "_blank");
+      setAffiliateSubmitted(true);
+    };
+
     return (
       <div className="max-w-3xl mx-auto space-y-6 pb-24 md:pb-12 pt-2 md:pt-4 px-4">
         <div className="flex items-center gap-3">
@@ -2024,15 +2100,25 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
 
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
             {affiliateSubmitted ? (
-              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-center font-bold text-sm">
-                🎉 Order Received! Our engineering team will contact your WhatsApp within 2 hours.
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-center space-y-2">
+                <p className="font-black text-sm">🎉 WhatsApp Chat Opened!</p>
+                <p className="text-xs">Your order details have been forwarded to our engineering desk (+234 811 449 1126).</p>
+                <Button 
+                  onClick={handleAffiliateWhatsAppOrder}
+                  variant="outline" 
+                  size="sm" 
+                  className="text-xs font-bold border-emerald-300"
+                >
+                  Reopen WhatsApp Chat
+                </Button>
               </div>
             ) : (
               <Button 
-                onClick={() => setAffiliateSubmitted(true)}
-                className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-base shadow-lg shadow-primary/25"
+                onClick={handleAffiliateWhatsAppOrder}
+                className="w-full h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2"
               >
-                Place Order Now
+                <MessageSquare className="h-5 w-5" />
+                Place Order on WhatsApp
               </Button>
             )}
           </div>
@@ -2040,6 +2126,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
       </div>
     );
   }
+
 
   // Fallback
   return (
