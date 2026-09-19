@@ -15,6 +15,8 @@ import {
   AlertCircle,
   Clock,
   ExternalLink,
+  Copy,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 
@@ -40,6 +42,15 @@ export default function FundWalletPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // Aspfiy Dedicated Virtual Account State
+  const [virtualAccount, setVirtualAccount] = useState<{
+    accountNumber: string;
+    bankName: string;
+    accountName: string;
+  } | null>(null);
+  const [loadingVirtualAccount, setLoadingVirtualAccount] = useState(true);
+  const [copiedAccount, setCopiedAccount] = useState(false);
+
   useEffect(() => {
     async function loadData() {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -55,7 +66,7 @@ export default function FundWalletPage() {
 
       const [{ data: profile }, { data: wallet }] = await Promise.all([
         supabase.from("profiles").select("full_name, email").eq("id", uid).single(),
-        supabase.from("wallets").select("balance").eq("user_id", uid).single(),
+        supabase.from("wallets").select("balance, payvessel_account_number, bank_name, account_name").eq("user_id", uid).single(),
       ]);
 
       const fullName = profile?.full_name || session.user.email?.split("@")[0] || "User";
@@ -63,9 +74,38 @@ export default function FundWalletPage() {
       if (profile?.email) setUserEmail(profile.email);
       setBalance(Number(wallet?.balance ?? 0));
       setLoadingBalance(false);
+
+      // If user already has an assigned virtual account in DB, show it immediately
+      if (wallet?.payvessel_account_number) {
+        setVirtualAccount({
+          accountNumber: wallet.payvessel_account_number,
+          bankName: wallet.bank_name || "Paga",
+          accountName: wallet.account_name || `Aspfiy-TSLA ${fullName.split(" ")[0]}`,
+        });
+        setLoadingVirtualAccount(false);
+      } else {
+        // Reserve a fresh dedicated account via Aspfiy
+        fetch(`/api/wallet/virtual-account?userId=${uid}`, {
+          headers: session.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success && data.account) {
+              setVirtualAccount(data.account);
+            }
+          })
+          .catch((err) => console.warn("Could not load virtual account:", err))
+          .finally(() => setLoadingVirtualAccount(false));
+      }
     }
     loadData();
   }, [router]);
+
+  const handleCopyAccount = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedAccount(true);
+    setTimeout(() => setCopiedAccount(false), 2500);
+  };
 
   const handleSelectAmount = (val: number) => {
     setAmount(val);
@@ -269,33 +309,100 @@ export default function FundWalletPage() {
         </Button>
       </div>
 
-      {/* Secondary Option: Dedicated Account (Payvessel) */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <Building2 className="h-5 w-5 text-slate-400" />
+      {/* Automated Dedicated Bank Account (Aspfiy Powered) */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl border-2 border-emerald-500/30 dark:border-emerald-500/20 p-6 sm:p-7 shadow-lg shadow-emerald-500/5 space-y-5">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black">
+              <Building2 className="h-5 w-5" />
+            </div>
             <div>
-              <h3 className="font-black text-slate-900 dark:text-white text-sm">
-                Permanent Dedicated Virtual Account
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                A personal 9PSB / Wema bank account permanently attached to your TSLA profile
+              <h2 className="text-base font-black text-slate-900 dark:text-white">
+                Dedicated Virtual Bank Account
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Automatic instant credit via any Nigerian bank app (24/7)
               </p>
             </div>
           </div>
-          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-full flex items-center gap-1">
-            <Clock className="h-3 w-3" /> Under Review
+          <span className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Active
           </span>
         </div>
 
-        <div className="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-400 space-y-2">
-          <p className="font-medium">
-            We are finalizing our compliance integration with 9PSB/Wema Bank. Once approved, you will see your dedicated bank account number here to save in your banking app.
-          </p>
-          <p className="text-[11px] text-primary dark:text-indigo-400 font-bold">
-            👉 In the meantime, please use the Instant Online Deposit above to fund your wallet right away.
-          </p>
-        </div>
+        {loadingVirtualAccount ? (
+          <div className="p-8 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 flex flex-col items-center justify-center gap-2 text-slate-500">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <p className="text-xs font-bold">Allocating your personal dedicated bank account...</p>
+          </div>
+        ) : virtualAccount ? (
+          <div className="space-y-4">
+            {/* Account Details Box */}
+            <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl p-5 sm:p-6 border border-slate-700 shadow-md space-y-4 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  Bank Name
+                </span>
+                <span className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                  {virtualAccount.bankName}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-1">
+                  Account Number
+                </span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-3xl sm:text-4xl font-black font-mono tracking-wider text-white">
+                    {virtualAccount.accountNumber}
+                  </span>
+                  <Button
+                    onClick={() => handleCopyAccount(virtualAccount.accountNumber)}
+                    size="sm"
+                    className="h-10 px-4 rounded-xl bg-white text-slate-950 hover:bg-slate-100 font-bold text-xs shrink-0 shadow-sm flex items-center gap-1.5"
+                  >
+                    {copiedAccount ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                    {copiedAccount ? "Copied!" : "Copy"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                <span className="text-slate-400 font-medium">Account Name</span>
+                <span className="font-bold text-slate-200">{virtualAccount.accountName}</span>
+              </div>
+            </div>
+
+            {/* Instruction Banner */}
+            <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800 text-xs font-medium text-emerald-900 dark:text-emerald-300 space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                How to Fund:
+              </p>
+              <p className="text-[11px] leading-relaxed">
+                Open your bank app (OPay, PalmPay, Kuda, GTBank, Zenith, Access, etc.), make a bank transfer of any amount to the account number above. Your TSLA wallet balance will automatically credit in 10–30 seconds!
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 text-xs text-center space-y-2">
+            <p className="font-bold text-slate-700 dark:text-slate-300">Click below to generate your personal bank account</p>
+            <Button
+              onClick={() => {
+                setLoadingVirtualAccount(true);
+                fetch(`/api/wallet/virtual-account?userId=${userId}`)
+                  .then((res) => res.json())
+                  .then((d) => { if (d.success) setVirtualAccount(d.account); })
+                  .finally(() => setLoadingVirtualAccount(false));
+              }}
+              size="sm"
+              className="rounded-xl font-bold text-xs"
+            >
+              Generate Dedicated Bank Account
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Security Trust Badge */}
