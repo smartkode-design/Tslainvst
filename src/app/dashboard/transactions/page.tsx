@@ -28,6 +28,17 @@ function formatNaira(amount: number): string {
   }).format(amount);
 }
 
+function cleanTransactionDescription(desc: string): string {
+  if (!desc) return "Wallet Transaction";
+  return desc
+    .replace(/^Admin refund for /i, "System Refund: ")
+    .replace(/^Admin refund /i, "System Refund: ")
+    .replace(/^Admin manual credit:\s*/i, "System Credit: ")
+    .replace(/^Admin manual debit:\s*/i, "System Adjustment: ")
+    .replace(/^Admin credit:\s*/i, "System Credit: ")
+    .replace(/^Admin credit\s*/i, "System Credit ");
+}
+
 export default function TransactionsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"all" | "inflow" | "outflow">("all");
@@ -177,7 +188,7 @@ export default function TransactionsPage() {
                     </div>
                     <div className="space-y-0.5">
                       <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary dark:group-hover:text-indigo-400 transition-colors">
-                        {trx.description}
+                        {cleanTransactionDescription(trx.description)}
                       </h4>
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">

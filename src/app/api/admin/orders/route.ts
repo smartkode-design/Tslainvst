@@ -128,7 +128,7 @@ export async function PATCH(req: Request) {
             type: "refund",
             status: "completed",
             reference: `REFUND-${Date.now()}-${orderId.slice(0, 8)}`,
-            description: `Admin refund for ${order.service_name} (Order #${orderId.slice(0, 8)})`,
+            description: `System Refund: ${order.service_name} (Order #${orderId.slice(0, 8)})`,
             metadata: { order_id: orderId },
           },
         ]);

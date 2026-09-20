@@ -7,7 +7,7 @@ import {
   Copy, Clock, MessageSquare, Check, Wifi, Tv, Contact, Sparkles, AlertCircle,
   Radio, CheckCircle, Shield, ArrowRight, Flame, HelpCircle, Layers, Star,
   TrendingUp, RefreshCw, Info, ExternalLink, ShieldAlert, BadgeCheck,
-  Search, X
+  Search, X, Mail
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -1997,12 +1997,12 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   // 5. AFFILIATE WEBSITE LEAD GEN FLOW (Primex Reference)
   // -------------------------------------------------------------
   if (slug.includes("affiliate")) {
-    const handleAffiliateWhatsAppOrder = () => {
+    const handleAffiliateOrder = () => {
       const fullSite = `www.${domainName.trim() || "mybrand"}${selectedDomain}`;
       const price = selectedDomain === ".com" ? "₦400,000" : selectedDomain === ".ng" ? "₦360,000" : "₦320,000";
-      const message = `Hello TSLA Engineering,\n\nI want to order an Affiliate Website:\n🌐 Domain: ${fullSite}\n📦 Package: ${selectedDomain} (${price})\n📱 Contact Phone/WhatsApp: ${whatsappNumber.trim() || "Not specified"}\n\nPlease confirm setup details and payment instructions.`;
-      const waUrl = `https://wa.me/2348114491126?text=${encodeURIComponent(message)}`;
-      window.open(waUrl, "_blank");
+      const message = `Hello TSLA Engineering,\n\nI want to order an Affiliate Website:\n🌐 Domain: ${fullSite}\n📦 Package: ${selectedDomain} (${price})\n📱 Contact Phone: ${whatsappNumber.trim() || "Not specified"}\n\nPlease confirm setup details and payment instructions.`;
+      const mailUrl = `mailto:support@tslainvst.com?subject=${encodeURIComponent("Affiliate Website Order: " + fullSite)}&body=${encodeURIComponent(message)}`;
+      window.location.href = mailUrl;
       setAffiliateSubmitted(true);
     };
 
@@ -2117,24 +2117,24 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
             {affiliateSubmitted ? (
               <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-center space-y-2">
-                <p className="font-black text-sm">🎉 WhatsApp Chat Opened!</p>
-                <p className="text-xs">Your order details have been forwarded to our engineering desk (+234 811 449 1126).</p>
+                <p className="font-black text-sm">🎉 Inquiry Prepared!</p>
+                <p className="text-xs">Your inquiry has been routed to our engineering desk at support@tslainvst.com.</p>
                 <Button 
-                  onClick={handleAffiliateWhatsAppOrder}
+                  onClick={handleAffiliateOrder}
                   variant="outline" 
                   size="sm" 
                   className="text-xs font-bold border-emerald-300"
                 >
-                  Reopen WhatsApp Chat
+                  Resend Inquiry
                 </Button>
               </div>
             ) : (
               <Button 
-                onClick={handleAffiliateWhatsAppOrder}
-                className="w-full h-14 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2"
+                onClick={handleAffiliateOrder}
+                className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-base shadow-lg shadow-primary/25 flex items-center justify-center gap-2"
               >
-                <MessageSquare className="h-5 w-5" />
-                Place Order on WhatsApp
+                <Mail className="h-5 w-5" />
+                Submit Order Inquiry to Engineering
               </Button>
             )}
           </div>

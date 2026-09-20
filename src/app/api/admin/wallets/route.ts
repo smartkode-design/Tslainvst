@@ -120,7 +120,7 @@ export async function POST(req: Request) {
         type: type === "credit" ? "deposit" : "withdrawal",
         status: "completed",
         reference: txRef,
-        description: `Admin manual ${type}: ${reason || "Administrative adjustment"}`,
+        description: `System ${type === "credit" ? "Credit" : "Adjustment"}: ${reason || "Automated wallet balance adjustment"}`,
         metadata: {
           adjusted_by: "admin",
           previous_balance: currentBalance,

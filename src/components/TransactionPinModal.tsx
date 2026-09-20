@@ -190,12 +190,10 @@ export function TransactionPinModal({
         {/* Forgot PIN Link */}
         <div className="text-center pt-1">
           <a
-            href="https://wa.me/2348114491126?text=Hello%20TSLA%20Support,%20I%20need%20help%20resetting%20my%20Transaction%20PIN."
-            target="_blank"
-            rel="noopener noreferrer"
+            href="mailto:support@tslainvst.com?subject=Transaction%20PIN%20Reset%20Request"
             className="text-[11px] font-bold text-slate-400 hover:text-primary dark:hover:text-indigo-400 underline"
           >
-            Forgot your PIN? Contact Support on WhatsApp
+            Forgot your PIN? Contact Support via Email (support@tslainvst.com)
           </a>
         </div>
       </div>

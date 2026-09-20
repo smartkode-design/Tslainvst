@@ -11,6 +11,17 @@ function formatNaira(amount: number): string {
   return new Intl.NumberFormat("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 }
 
+function cleanTransactionDescription(desc: string): string {
+  if (!desc) return "Wallet Transaction";
+  return desc
+    .replace(/^Admin refund for /i, "System Refund: ")
+    .replace(/^Admin refund /i, "System Refund: ")
+    .replace(/^Admin manual credit:\s*/i, "System Credit: ")
+    .replace(/^Admin manual debit:\s*/i, "System Adjustment: ")
+    .replace(/^Admin credit:\s*/i, "System Credit: ")
+    .replace(/^Admin credit\s*/i, "System Credit ");
+}
+
 interface Transaction {
   id: string;
   description: string;
@@ -302,7 +313,7 @@ export default function WalletPage() {
                       {isCredit ? <ArrowDownLeft className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
                     </div>
                     <div>
-                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">{item.description}</h4>
+                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">{cleanTransactionDescription(item.description)}</h4>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">{date}</span>
                         <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 rounded border border-emerald-100 dark:border-emerald-900/60">
