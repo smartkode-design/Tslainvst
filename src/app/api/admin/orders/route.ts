@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { sendRefundEmail } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -85,10 +86,10 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
-    const { orderId, status, refundWallet } = body;
+    const { orderId, status, refundWallet, action } = body;
 
-    if (!orderId || !status) {
-      return NextResponse.json({ success: false, error: "Order ID and status required" }, { status: 400 });
+    if (!orderId) {
+      return NextResponse.json({ success: false, error: "Order ID required" }, { status: 400 });
     }
 
     // 1. Fetch order details
@@ -100,6 +101,39 @@ export async function PATCH(req: Request) {
 
     if (oErr || !order) {
       return NextResponse.json({ success: false, error: "Order not found" }, { status: 404 });
+    }
+
+    // Action: Resend refund notification email
+    if (action === "resend_refund_email") {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", order.user_id)
+        .single();
+
+      if (!profile?.email) {
+        return NextResponse.json({ success: false, error: "Customer profile email not found" }, { status: 400 });
+      }
+
+      const emailResult = await sendRefundEmail({
+        to: profile.email,
+        customerName: profile.full_name || profile.email.split("@")[0] || "Customer",
+        orderId: order.id,
+        serviceName: order.service_name || "Digital Service",
+        quantity: order.quantity,
+        target: order.target,
+        amountNgn: Number(order.amount_ngn || 0),
+      });
+
+      if (!emailResult.success) {
+        return NextResponse.json({ success: false, error: emailResult.error || "Failed to send email" }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, message: `System Refund email resent to ${profile.email}` });
+    }
+
+    if (!status) {
+      return NextResponse.json({ success: false, error: "Status required" }, { status: 400 });
     }
 
     // 2. If status is being updated to refunded/cancelled and refundWallet is requested:
@@ -132,6 +166,31 @@ export async function PATCH(req: Request) {
             metadata: { order_id: orderId },
           },
         ]);
+
+        // Send System Refund email notification to customer
+        try {
+          const { data: profile } = await supabaseAdmin
+            .from("profiles")
+            .select("email, full_name")
+            .eq("id", order.user_id)
+            .single();
+
+          if (profile?.email) {
+            sendRefundEmail({
+              to: profile.email,
+              customerName: profile.full_name || profile.email.split("@")[0] || "Customer",
+              orderId: order.id,
+              serviceName: order.service_name || "Digital Service",
+              quantity: order.quantity,
+              target: order.target,
+              amountNgn: refundAmount,
+            }).catch((emailErr) => {
+              console.error("[Admin Orders] Background refund email error:", emailErr);
+            });
+          }
+        } catch (profileErr) {
+          console.error("[Admin Orders] Could not fetch profile for refund email:", profileErr);
+        }
       }
     }
 
@@ -151,3 +210,4 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+

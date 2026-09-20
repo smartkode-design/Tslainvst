@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { 
   ShoppingBag, Search, Filter, RefreshCw, CheckCircle2, 
   Clock, AlertCircle, RotateCcw, Eye, X, ExternalLink, 
-  Smartphone, Rocket, ShieldCheck, ArrowRight, Check, DollarSign 
+  Smartphone, Rocket, ShieldCheck, ArrowRight, Check, DollarSign, Mail 
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,27 @@ export default function AdminOrdersPage() {
         fetchOrders();
       } else {
         showToast(data.error || "Failed to update order", "error");
+      }
+    } catch (err: any) {
+      showToast(err.message, "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResendRefundEmail = async (orderId: string) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/admin/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, action: "resend_refund_email" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || "System Refund email sent to customer");
+      } else {
+        showToast(data.error || "Failed to send email", "error");
       }
     } catch (err: any) {
       showToast(err.message, "error");
@@ -432,6 +453,16 @@ export default function AdminOrdersPage() {
                     }}
                   >
                     <RotateCcw className="h-4 w-4" /> Refund to Customer Wallet
+                  </Button>
+                )}
+                {selectedOrder.status === "refunded" && (
+                  <Button
+                    variant="outline"
+                    className="w-full text-blue-500 hover:bg-blue-500/10 hover:border-blue-500/30 gap-2"
+                    disabled={actionLoading}
+                    onClick={() => handleResendRefundEmail(selectedOrder.id)}
+                  >
+                    <Mail className="h-4 w-4" /> Resend System Refund Email
                   </Button>
                 )}
               </div>
