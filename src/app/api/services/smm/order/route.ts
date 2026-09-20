@@ -129,8 +129,17 @@ export async function POST(req: Request) {
         .update({ balance: currentBalance, updated_at: new Date().toISOString() })
         .eq("id", wallet.id);
 
+      const rawMsg = String(apiError?.message || "");
+      let userFriendlyMessage = "This boost service is temporarily undergoing routine maintenance. Please try another package or check back shortly.";
+
+      if (rawMsg.toLowerCase().includes("link") || rawMsg.toLowerCase().includes("url")) {
+        userFriendlyMessage = "The target link provided appears to be invalid or private. Please check the URL and ensure the profile is public.";
+      } else if (rawMsg.toLowerCase().includes("quantity") || rawMsg.toLowerCase().includes("min") || rawMsg.toLowerCase().includes("max")) {
+        userFriendlyMessage = "Order quantity must adhere to the service limits for this package.";
+      }
+
       return NextResponse.json(
-        { error: `Provider error: ${apiError.message || "Failed to place SMM boost order"}` },
+        { error: userFriendlyMessage },
         { status: 502 }
       );
     }

@@ -16,6 +16,22 @@ import { useAuth } from "../../layout";
 import { calculateSmsPrice, isServiceSupportedInCountry } from "@/lib/pricing";
 import { TransactionPinModal } from "@/components/TransactionPinModal";
 
+function sanitizeClientErrorMessage(msg: string): string {
+  if (!msg) return "Service route is temporarily unavailable. Please try another carrier or try again shortly.";
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes("5sim") ||
+    lower.includes("jap") ||
+    lower.includes("provider error") ||
+    lower.includes("api error") ||
+    lower.includes("not enough user balance") ||
+    lower.includes("not enough balance")
+  ) {
+    return "This carrier route is temporarily unavailable or out of stock. Please select another country or try again shortly.";
+  }
+  return msg;
+}
+
 export default function ServicePage({ params }: { params: { slug: string } }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -1311,7 +1327,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                       setSmsReceived(false);
                       setSmsTimer(1185);
                     } catch (err: any) {
-                      setSmsError(err.message || "Failed to generate number. Please check your balance.");
+                      setSmsError(sanitizeClientErrorMessage(err.message));
                     } finally {
                       setIsGeneratingNumber(false);
                     }
@@ -1694,7 +1710,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                     setSmmPlacedOrder(data);
                     setSmmSuccess(true);
                   } catch (err: any) {
-                    setSmmError(err.message || "Failed to submit order. Please check balance.");
+                    setSmmError(sanitizeClientErrorMessage(err.message));
                   } finally {
                     setIsSubmittingSmm(false);
                   }

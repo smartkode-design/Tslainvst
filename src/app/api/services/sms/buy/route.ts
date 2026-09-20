@@ -101,8 +101,17 @@ export async function POST(req: Request) {
         .update({ balance: currentBalance, updated_at: new Date().toISOString() })
         .eq("id", wallet.id);
 
+      const rawMsg = String(apiError?.message || "");
+      let userFriendlyMessage = "This carrier route is temporarily unavailable or out of stock. Please select another country or try again shortly.";
+
+      if (rawMsg.toLowerCase().includes("no free phones") || rawMsg.toLowerCase().includes("out of stock")) {
+        userFriendlyMessage = "Numbers for this service are temporarily out of stock in this region. Please try another country or check back soon.";
+      } else if (rawMsg.toLowerCase().includes("not enough") || rawMsg.toLowerCase().includes("balance") || rawMsg.toLowerCase().includes("limit")) {
+        userFriendlyMessage = "This carrier route is temporarily unavailable for allocation. Please select a different country or try again shortly.";
+      }
+
       return NextResponse.json(
-        { error: `Provider error: ${apiError.message || "Failed to allocate phone number"}` },
+        { error: userFriendlyMessage },
         { status: 502 }
       );
     }
