@@ -1119,12 +1119,18 @@ export class JapService {
       return { order: Math.floor(1000000 + Math.random() * 9000000) };
     }
 
-    return this.post<{ order: number }>({
+    const data = await this.post<{ order?: number; error?: string }>({
       action: "add",
       service: serviceId,
       link,
       quantity,
     });
+
+    if (data.error || !data.order) {
+      throw new Error(`JAP API Error: ${data.error || "Order rejected by provider"}`);
+    }
+
+    return { order: Number(data.order) };
   }
 
   /**

@@ -16,41 +16,63 @@ export async function GET() {
     const totalUsers = profiles?.length || 0;
     const activeSellers = profiles?.filter((p) => p.role === "seller").length || 0;
 
-    // 2. Fetch Orders
+    // 2. Fetch All Deposits (Total Money Collected & Today's Collection)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const { data: allDeposits } = await supabaseAdmin
+      .from("transactions")
+      .select("amount, created_at, status")
+      .eq("type", "deposit")
+      .in("status", ["completed", "successful"]);
+
+    const totalDeposited = (allDeposits || []).reduce((sum, d) => sum + Number(d.amount || 0), 0);
+    const todayDeposited = (allDeposits || [])
+      .filter((d) => new Date(d.created_at) >= todayStart)
+      .reduce((sum, d) => sum + Number(d.amount || 0), 0);
+
+    // 3. Fetch All Wallets (Total Customer Float Liability)
+    const { data: allWallets } = await supabaseAdmin
+      .from("wallets")
+      .select("balance");
+
+    const totalFloat = (allWallets || []).reduce((sum, w) => sum + Number(w.balance || 0), 0);
+
+    // 4. Fetch Orders
     let totalOrders = 0;
     let pendingOrders = 0;
     let recentOrders: any[] = [];
+    let totalRevenue = 0;
 
-    const { data: orders, error: oErr } = await supabaseAdmin
-      .from("orders")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(10);
+    const [{ data: allOrders }, { data: recentOrdersData }] = await Promise.all([
+      supabaseAdmin.from("orders").select("id, status, amount_ngn"),
+      supabaseAdmin.from("orders").select("*").order("created_at", { ascending: false }).limit(10),
+    ]);
 
-    if (!oErr && orders) {
-      totalOrders = orders.length;
-      pendingOrders = orders.filter((o) => o.status === "pending").length;
-      recentOrders = orders;
+    if (allOrders) {
+      totalOrders = allOrders.length;
+      pendingOrders = allOrders.filter((o) => o.status === "pending" || o.status === "processing").length;
+      totalRevenue = allOrders
+        .filter((o) => o.status === "completed" || o.status === "processing")
+        .reduce((sum, o) => sum + Number(o.amount_ngn || 0), 0);
+    }
+    if (recentOrdersData) {
+      recentOrders = recentOrdersData;
     }
 
-    // 3. Fetch Transactions
-    let totalRevenue = 0;
+    // 5. Recent Transactions
     let recentTransactions: any[] = [];
-
-    const { data: txns, error: tErr } = await supabaseAdmin
+    const { data: txns } = await supabaseAdmin
       .from("transactions")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(10);
 
-    if (!tErr && txns) {
+    if (txns) {
       recentTransactions = txns;
-      totalRevenue = txns
-        .filter((t) => t.status === "successful" && Number(t.amount) > 0)
-        .reduce((sum, t) => sum + Number(t.amount || 0), 0);
     }
 
-    // 4. Recent joined users
+    // 6. Recent joined users
     const recentUsers = (profiles || []).slice(0, 5).map((u) => ({
       id: u.id,
       name: u.full_name || u.email?.split("@")[0] || "User",
@@ -68,6 +90,9 @@ export async function GET() {
       stats: {
         totalUsers,
         activeSellers,
+        totalDeposited,
+        todayDeposited,
+        totalFloat,
         totalRevenue,
         totalOrders,
         pendingOrders,

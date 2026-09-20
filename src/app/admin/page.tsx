@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Users, Store, CreditCard, ShoppingBag, ArrowUpRight,
   Globe, Zap, ExternalLink, RefreshCw, Database, ShieldCheck,
-  CheckCircle2, AlertCircle, ArrowRight
+  CheckCircle2, AlertCircle, ArrowRight, Wallet, ArrowDownLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -49,6 +49,9 @@ export default function AdminDashboard() {
   const stats = statsData?.stats || {
     totalUsers: 0,
     activeSellers: 0,
+    totalDeposited: 0,
+    todayDeposited: 0,
+    totalFloat: 0,
     totalRevenue: 0,
     totalOrders: 0,
     pendingOrders: 0,
@@ -206,38 +209,38 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Active Sellers */}
+        {/* Total Collected / Deposits */}
         <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Sellers</p>
-              <div className="h-9 w-9 rounded-xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200/50 dark:border-sky-800/40 flex items-center justify-center text-sky-600 dark:text-sky-400">
-                <Store className="h-4 w-4" />
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Deposits</p>
+              <div className="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/50 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                <ArrowDownLeft className="h-4 w-4" />
               </div>
             </div>
             <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              {loadingStats ? "..." : stats.activeSellers}
+              ₦{loadingStats ? "..." : Number(stats.totalDeposited || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center mt-1 font-semibold">
-              Verified merchants
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 flex items-center mt-1 font-bold">
+              +₦{Number(stats.todayDeposited || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} collected today
             </p>
           </CardContent>
         </Card>
 
-        {/* Total Revenue */}
+        {/* Customer Wallet Float */}
         <Card className="border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Revenue</p>
-              <div className="h-9 w-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/50 dark:border-emerald-800/40 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                <CreditCard className="h-4 w-4" />
+              <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Customer Float</p>
+              <div className="h-9 w-9 rounded-xl bg-sky-50 dark:bg-sky-950/60 border border-sky-200/50 dark:border-sky-800/40 flex items-center justify-center text-sky-600 dark:text-sky-400">
+                <Wallet className="h-4 w-4" />
               </div>
             </div>
             <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-              ₦{loadingStats ? "..." : Number(stats.totalRevenue).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ₦{loadingStats ? "..." : Number(stats.totalFloat || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h3>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center mt-1 font-semibold">
-              Real processed volume
+              Total customer balances
             </p>
           </CardContent>
         </Card>
@@ -255,7 +258,7 @@ export default function AdminDashboard() {
               {loadingStats ? "..." : stats.totalOrders}
             </h3>
             <p className="text-[11px] text-amber-600 dark:text-amber-400 flex items-center mt-1 font-bold">
-              {stats.pendingOrders} pending execution
+              ₦{Number(stats.totalRevenue || 0).toLocaleString("en-NG", { minimumFractionDigits: 0 })} volume · {stats.pendingOrders} active
             </p>
           </CardContent>
         </Card>
