@@ -76,15 +76,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         wallet: { balance: Number(wallet?.balance ?? 0) },
         loading: false,
       });
+
+      // Realtime listener to update wallet balance instantly across the entire dashboard
+      walletChannel = supabase
+        .channel(`layout-wallet-listener-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "wallets",
+            filter: `user_id=eq.${userId}`,
+          },
+          (payload: any) => {
+            if (payload.new && typeof payload.new.balance !== "undefined") {
+              setAuthCtx((prev) => ({
+                ...prev,
+                wallet: { balance: Number(payload.new.balance) },
+              }));
+            }
+          }
+        )
+        .subscribe();
     }
 
+    let walletChannel: any = null;
     loadUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) router.replace("/login");
     });
 
-    return () => { mounted = false; listener.subscription.unsubscribe(); };
+    return () => { 
+      mounted = false; 
+      listener.subscription.unsubscribe();
+      if (walletChannel) supabase.removeChannel(walletChannel);
+    };
   }, [router]);
 
   const handleLogout = async () => {
