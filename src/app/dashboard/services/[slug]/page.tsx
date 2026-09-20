@@ -873,7 +873,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
       id: "telegram", 
       name: "Telegram", 
       icon: "✈️", 
-      startingPrice: dynamicPricing["sms_telegram"] ? `₦${dynamicPricing["sms_telegram"].toLocaleString()}` : "₦3,500", 
+      startingPrice: dynamicPricing["sms_telegram"] ? `₦${dynamicPricing["sms_telegram"].toLocaleString()}` : "₦2,250", 
       popular: true, 
       badge: "⭐ INSTANT", 
       category: "messaging",

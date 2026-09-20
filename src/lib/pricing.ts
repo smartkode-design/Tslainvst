@@ -36,7 +36,7 @@ export const DEFAULT_PRICING: PricingItem[] = [
     icon: "✈️",
     wholesaleUSD: 0.15,
     wholesaleEstNGN: 240,
-    retailNGN: 3500,
+    retailNGN: 2250,
     active: true,
     unitLabel: "per number",
   },
@@ -834,12 +834,12 @@ export function calculateSmsPrice(
   }
 
   if (s === "telegram") {
-    if (c === "us") return 4000;
+    if (c === "us") return 2250; // Market competitive rate (beating ₦2,300 competitor price)
     if (c === "gb") return 4500;
     if (c === "au") return 4300;
     if (c === "ca") return 3900;
     if (["de", "fr", "nl", "es", "pl", "se", "tr"].includes(c)) return 3800;
-    return 3500;
+    return 2250;
   }
 
   if (s === "signal") {
