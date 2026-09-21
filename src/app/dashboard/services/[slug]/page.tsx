@@ -69,6 +69,9 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   const [copiedNumber, setCopiedNumber] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [smsReceived, setSmsReceived] = useState(false);
+  const [receivedSmsCode, setReceivedSmsCode] = useState<string>("");
+  const [receivedSmsText, setReceivedSmsText] = useState<string>("");
+  const [isCancelingSms, setIsCancelingSms] = useState(false);
   const [generatedPhone, setGeneratedPhone] = useState<string>("");
   const [smsOrderId, setSmsOrderId] = useState<string | number>("");
   const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
@@ -125,23 +128,62 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
     }
   }, [slug, router]);
 
+  // SMS Countdown timer & auto-cancel on timeout
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (hasGeneratedNumber && smsTimer > 0) {
       interval = setInterval(() => setSmsTimer((prev) => prev - 1), 1000);
+    } else if (hasGeneratedNumber && smsTimer === 0 && !smsReceived && smsOrderId) {
+      // Auto-cancel and refund when timeout reached
+      fetch("/api/services/sms/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: smsOrderId }),
+      }).finally(() => {
+        setHasGeneratedNumber(false);
+        setSmsOrderId("");
+        setGeneratedPhone("");
+        setSmsReceived(false);
+        setReceivedSmsCode("");
+        setSmsError("Session timed out. 100% refund has been credited back to your wallet.");
+      });
     }
     return () => clearInterval(interval);
-  }, [hasGeneratedNumber, smsTimer]);
+  }, [hasGeneratedNumber, smsTimer, smsReceived, smsOrderId]);
 
-  // Simulate incoming SMS after 4 seconds of generating number
+  // Real-time polling for actual incoming SMS from carrier
   useEffect(() => {
-    if (hasGeneratedNumber && !smsReceived) {
-      const timer = setTimeout(() => {
-        setSmsReceived(true);
-      }, 4000);
-      return () => clearTimeout(timer);
+    let pollInterval: NodeJS.Timeout;
+    if (hasGeneratedNumber && smsOrderId && !smsReceived) {
+      const pollSms = async () => {
+        try {
+          const res = await fetch(`/api/services/sms/check?orderId=${smsOrderId}`);
+          const data = await res.json();
+          if (data.status === "RECEIVED" && data.code) {
+            setReceivedSmsCode(data.code);
+            setReceivedSmsText(data.text || "");
+            setSmsReceived(true);
+          } else if (data.status === "CANCELED" || data.status === "TIMEOUT") {
+            setHasGeneratedNumber(false);
+            setSmsReceived(false);
+            setSmsOrderId("");
+            setGeneratedPhone("");
+            setReceivedSmsCode("");
+            setSmsError("Order expired or was canceled. Any balance debited has been refunded.");
+          }
+        } catch (e) {
+          console.warn("SMS check poll error:", e);
+        }
+      };
+
+      // Poll immediately, then every 3 seconds
+      pollSms();
+      pollInterval = setInterval(pollSms, 3000);
     }
-  }, [hasGeneratedNumber, smsReceived]);
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [hasGeneratedNumber, smsOrderId, smsReceived]);
 
   const formatTime = (secs: number) => {
     const mins = Math.floor(secs / 60);
@@ -1328,6 +1370,8 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                       setSmsOrderId(data.orderId || `SMS_${Date.now()}`);
                       setHasGeneratedNumber(true);
                       setSmsReceived(false);
+                      setReceivedSmsCode("");
+                      setReceivedSmsText("");
                       setSmsTimer(1185);
                     } catch (err: any) {
                       setSmsError(sanitizeClientErrorMessage(err.message));
@@ -1425,10 +1469,13 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                 <div className="bg-white dark:bg-slate-800/90 border border-emerald-200 dark:border-emerald-800/60 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
                   <div className="space-y-0.5 text-center sm:text-left">
                     <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">Your {activeServiceObj.name} verification code is:</p>
-                    <p className="text-3xl font-black text-slate-900 dark:text-white font-mono tracking-widest">849 - 204</p>
+                    <p className="text-3xl font-black text-slate-900 dark:text-white font-mono tracking-widest">{receivedSmsCode || "------"}</p>
+                    {receivedSmsText && (
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 max-w-sm truncate">{receivedSmsText}</p>
+                    )}
                   </div>
                   <Button 
-                    onClick={() => handleCopy("849204", "code")}
+                    onClick={() => handleCopy(receivedSmsCode.replace(/[^0-9]/g, "") || receivedSmsCode, "code")}
                     className="h-12 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-sm shadow-md shadow-emerald-600/20 flex items-center gap-2"
                   >
                     {copiedCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -1444,14 +1491,42 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                 Did not receive SMS? Cancel within 20 mins for a full refund.
               </span>
               <Button 
-                onClick={() => {
-                  setHasGeneratedNumber(false);
-                  setSmsReceived(false);
+                disabled={isCancelingSms}
+                onClick={async () => {
+                  if (!smsOrderId) {
+                    setHasGeneratedNumber(false);
+                    setSmsReceived(false);
+                    return;
+                  }
+                  setIsCancelingSms(true);
+                  try {
+                    const res = await fetch("/api/services/sms/cancel", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ orderId: smsOrderId }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                      setHasGeneratedNumber(false);
+                      setSmsReceived(false);
+                      setSmsOrderId("");
+                      setGeneratedPhone("");
+                      setReceivedSmsCode("");
+                      setReceivedSmsText("");
+                      setSmsError(null);
+                    } else {
+                      setSmsError(data.error || "Failed to cancel order");
+                    }
+                  } catch (err: any) {
+                    setSmsError(err.message || "Failed to cancel order");
+                  } finally {
+                    setIsCancelingSms(false);
+                  }
                 }}
                 variant="ghost" 
                 className="text-xs font-bold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl"
               >
-                Cancel & Refund Wallet
+                {isCancelingSms ? "Canceling & Refunding..." : "Cancel & Refund Wallet"}
               </Button>
             </div>
           </div>
