@@ -55,13 +55,10 @@ export default function AddListingPage() {
       const session = sessionData?.session;
       if (!session) { router.push("/login"); return; }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
+      const res = await fetch(`/api/seller/apply?userId=${session.user.id}`);
+      const data = await res.json();
 
-      if (!profile || profile.role !== "seller") {
+      if (!data.isSeller) {
         router.push("/dashboard/seller-apply");
         return;
       }

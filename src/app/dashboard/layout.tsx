@@ -64,12 +64,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       if (!mounted) return;
 
       const fullName = profile?.full_name || session.user.email?.split("@")[0] || "User";
+      const metaRole = (session.user.user_metadata?.role as string) || (session.user.app_metadata?.role as string);
+      const userRole = profile?.role || metaRole || "user";
+
       setAuthCtx({
         user: {
           id: userId,
           full_name: fullName,
           email: profile?.email || session.user.email || "",
-          role: profile?.role || "user",
+          role: userRole,
           initials: getInitials(fullName),
           firstName: fullName.split(" ")[0],
         },
@@ -98,9 +101,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }
         )
         .subscribe();
+
+      // Realtime listener to update profile role instantly when promoted by admin
+      profileChannel = supabase
+        .channel(`layout-profile-listener-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "profiles",
+            filter: `id=eq.${userId}`,
+          },
+          (payload: any) => {
+            if (payload.new && payload.new.role) {
+              setAuthCtx((prev) => ({
+                ...prev,
+                user: prev.user ? { ...prev.user, role: payload.new.role } : null,
+              }));
+            }
+          }
+        )
+        .subscribe();
     }
 
     let walletChannel: any = null;
+    let profileChannel: any = null;
     loadUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -111,6 +137,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       mounted = false; 
       listener.subscription.unsubscribe();
       if (walletChannel) supabase.removeChannel(walletChannel);
+      if (profileChannel) supabase.removeChannel(profileChannel);
     };
   }, [router]);
 

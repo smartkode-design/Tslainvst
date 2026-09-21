@@ -38,19 +38,17 @@ export default function SellerListingsPage() {
       const session = sessionData?.session;
       if (!session) { router.push("/login"); return; }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
+      setUserId(session.user.id);
+      const res = await fetch(`/api/seller/listings?userId=${session.user.id}`);
+      const data = await res.json();
 
-      if (!profile || profile.role !== "seller") {
+      if (!data.success) {
         router.push("/dashboard/seller-apply");
         return;
       }
 
-      setUserId(session.user.id);
-      await fetchListings(session.user.id);
+      setListings(data.listings || []);
+      setStats(data.stats || { totalListings: 0, soldListings: 0, availableListings: 0 });
       setLoading(false);
     };
     init();

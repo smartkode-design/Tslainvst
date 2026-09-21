@@ -26,35 +26,27 @@ export default function SellerDashboard() {
       const session = sessionData?.session;
       if (!session) { router.push("/login"); return; }
 
-      // Verify seller role
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
+      setUserId(session.user.id);
 
-      if (!profile || profile.role !== "seller") {
+      // 1. Fetch listings & stats directly from backend API (authoritative role check)
+      const res = await fetch(`/api/seller/listings?userId=${session.user.id}`);
+      const data = await res.json();
+
+      if (!data.success) {
         router.push("/dashboard/seller-apply");
         return;
       }
 
-      setUserId(session.user.id);
+      setStats(data.stats || { totalListings: 0, soldListings: 0, availableListings: 0 });
+      setRecentListings((data.listings || []).slice(0, 5));
 
-      // Fetch wallet balance
+      // 2. Fetch wallet balance
       const { data: wallet } = await supabase
         .from("wallets")
         .select("balance")
         .eq("user_id", session.user.id)
         .single();
       setWalletBalance(Number(wallet?.balance || 0));
-
-      // Fetch listings & stats
-      const res = await fetch(`/api/seller/listings?userId=${session.user.id}`);
-      const data = await res.json();
-      if (data.success) {
-        setStats(data.stats);
-        setRecentListings(data.listings.slice(0, 5));
-      }
 
       setLoading(false);
     };

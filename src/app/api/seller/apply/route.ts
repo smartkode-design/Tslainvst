@@ -24,8 +24,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // If already a seller, return that status
-    if (profile.role === "seller") {
+    // If already a seller or admin, return that status
+    if (profile.role === "seller" || profile.role === "admin") {
       return NextResponse.json({ success: true, isSeller: true, application: null });
     }
 

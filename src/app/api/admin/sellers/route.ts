@@ -80,7 +80,7 @@ export async function POST(req: Request) {
 
     const newRole = action === "reject" ? "user" : (role || "seller");
 
-    // Update user role (no updated_at — handled by DB trigger or omitted)
+    // Update user role in public.profiles
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .update({ role: newRole })
@@ -89,6 +89,16 @@ export async function POST(req: Request) {
       .single();
 
     if (error) throw error;
+
+    // Also update auth.users metadata for session consistency
+    try {
+      await supabaseAdmin.auth.admin.updateUserById(userId, {
+        user_metadata: { role: newRole },
+        app_metadata: { role: newRole },
+      });
+    } catch (authErr) {
+      console.warn("Auth user metadata sync notice:", authErr);
+    }
 
     // If there's an application, update its status
     if (applicationId) {

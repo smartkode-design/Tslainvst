@@ -20,7 +20,7 @@ export async function GET(req: Request) {
       .eq("id", userId)
       .single();
 
-    if (!profile || profile.role !== "seller") {
+    if (!profile || (profile.role !== "seller" && profile.role !== "admin")) {
       return NextResponse.json({ error: "Not authorized. Seller role required." }, { status: 403 });
     }
 
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
       .eq("id", userId)
       .single();
 
-    if (!profile || profile.role !== "seller") {
+    if (!profile || (profile.role !== "seller" && profile.role !== "admin")) {
       return NextResponse.json({ error: "Not authorized. Seller role required." }, { status: 403 });
     }
 
