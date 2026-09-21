@@ -349,28 +349,52 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
       badge: "Naija Real"
     },
     {
-      id: "tt-lik-real",
+      id: "tt-lik-instant",
       platform: "tiktok",
       category: "likes",
       quality: "HIGH",
-      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
-      name: "TikTok Video Likes [Real Profiles | Instant Start 🔥 | 30-Day Refill]",
+      qualityColor: "bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60",
+      name: "TikTok Video Likes [VIP Instant Start 🔥 | 30-Day Refill Guaranteed]",
       speed: "10k/Day",
-      minMax: "10 - 10,000",
+      minMax: "10 - 50,000",
       rate: 3800,
-      badge: "Instant Start 🔥"
+      badge: "VIP Instant 🔥"
     },
     {
-      id: "tt-lik-budget",
+      id: "tt-lik-ultra",
+      platform: "tiktok",
+      category: "likes",
+      quality: "HIGH",
+      qualityColor: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60",
+      name: "TikTok Video Likes [Ultra Speed 300k/Day | Fast Active Profiles]",
+      speed: "300k/Day",
+      minMax: "10 - 50,000",
+      rate: 2450,
+      badge: "Ultra Fast ⚡"
+    },
+    {
+      id: "tt-lik-fast",
+      platform: "tiktok",
+      category: "likes",
+      quality: "MEDIUM",
+      qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
+      name: "TikTok Video Likes [High Speed 5k/Hour | Fast Worker Pool]",
+      speed: "5k/Hour",
+      minMax: "10 - 5,000",
+      rate: 1500,
+      badge: "Fast 5k/Hr"
+    },
+    {
+      id: "tt-lik-real",
       platform: "tiktok",
       category: "likes",
       quality: "LOW",
       qualityColor: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60",
-      name: "TikTok Video Likes [Standard Queue | Budget Saver (1-2 Hrs)]",
-      speed: "50k/Day",
+      name: "TikTok Video Likes [Economy Saver | Standard Queue (1-2 Hrs)]",
+      speed: "10k/Day",
       minMax: "50 - 50,000",
-      rate: 1500,
-      badge: "Budget Saver"
+      rate: 950,
+      badge: "Economy Saver"
     },
     {
       id: "tt-viw-viral",
