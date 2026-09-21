@@ -12,10 +12,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
     phone TEXT,
-    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin', 'seller')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
+
 
 -- 2. WALLETS TABLE (Stores User Balances & Dedicated Virtual Accounts)
 CREATE TABLE IF NOT EXISTS public.wallets (

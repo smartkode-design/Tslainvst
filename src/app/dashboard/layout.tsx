@@ -119,6 +119,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     router.replace("/login");
   };
 
+  const { user, loading } = authCtx;
+
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
     { name: "Marketplace", href: "/marketplace", icon: Store },
@@ -127,6 +129,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Refer & Earn", href: "/dashboard/referrals", icon: Gift },
     { name: "Transactions", href: "/dashboard/transactions", icon: CreditCard },
     { name: "Orders", href: "/dashboard/orders", icon: Receipt },
+    ...(user?.role === "seller" || user?.role === "admin"
+      ? [{ name: "Seller Hub", href: "/seller", icon: Shield }]
+      : [{ name: "Become a Seller", href: "/dashboard/seller-apply", icon: Shield }]
+    ),
   ];
 
   const bottomNavItems = [
@@ -141,8 +147,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
     { name: "Profile", href: "/settings", icon: User },
   ];
-
-  const { user, loading } = authCtx;
 
   // Auth loading screen
   if (loading) {

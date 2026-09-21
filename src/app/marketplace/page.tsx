@@ -248,7 +248,23 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      {/* Search, Filter & View Mode Controls */}
+      {/* Become a Seller Banner */}
+      {userSession && (
+        <Link href="/dashboard/seller-apply">
+          <div className="flex items-center justify-between px-4 py-3 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-rose-500/10 border border-orange-200/60 dark:border-orange-900/50 hover:from-orange-500/20 hover:via-amber-500/20 hover:to-rose-500/20 transition-all cursor-pointer">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🏪</span>
+              <div>
+                <p className="text-xs font-black text-slate-900 dark:text-white">Have accounts to sell? Apply to be a seller!</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">List your services — earn 90% of every sale, paid to your wallet instantly.</p>
+              </div>
+            </div>
+            <span className="text-xs font-black text-orange-600 dark:text-orange-400 shrink-0 ml-2">Apply →</span>
+          </div>
+        </Link>
+      )}
+
+
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Search Bar */}
         <div className="relative flex-1">

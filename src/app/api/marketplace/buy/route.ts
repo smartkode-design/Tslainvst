@@ -172,7 +172,47 @@ export async function POST(req: Request) {
       .select("id")
       .single();
 
-    // 8. Format credentials for copy-pasting
+    // 8. Pay seller their cut (if this listing has a seller)
+    const sellerId = updatedLog.seller_id;
+    if (sellerId && sellerId !== authenticatedUserId) {
+      const commissionPct = Number(updatedLog.commission_pct || 10);
+      const platformCut = Math.round(priceNGN * (commissionPct / 100) * 100) / 100;
+      const sellerEarnings = Math.round((priceNGN - platformCut) * 100) / 100;
+
+      // Find seller's wallet
+      const { data: sellerWallet } = await supabaseAdmin
+        .from("wallets")
+        .select("id, balance")
+        .eq("user_id", sellerId)
+        .single();
+
+      if (sellerWallet) {
+        const newSellerBalance = Number((Number(sellerWallet.balance) + sellerEarnings).toFixed(2));
+        await supabaseAdmin
+          .from("wallets")
+          .update({ balance: newSellerBalance, updated_at: new Date().toISOString() })
+          .eq("id", sellerWallet.id);
+
+        // Record seller's earnings transaction
+        await supabaseAdmin.from("transactions").insert({
+          user_id: sellerId,
+          amount: sellerEarnings,
+          type: "sale",
+          status: "completed",
+          reference: `SALE_${log.id.slice(0, 8)}_${Date.now()}`,
+          description: `Sale: ${log.title} (Platform fee: ${commissionPct}%)`,
+          metadata: { logId: log.id, buyerId: authenticatedUserId, commission: platformCut },
+        });
+
+        // Mark log as seller_paid
+        await supabaseAdmin
+          .from("marketplace_logs")
+          .update({ seller_paid: true })
+          .eq("id", log.id);
+      }
+    }
+
+    // 9. Format credentials for copy-pasting
     let formattedText = "";
     if (typeof log.credentials === "string") {
       formattedText = log.credentials;
