@@ -64,13 +64,16 @@ export async function POST(req: Request) {
     // 3. Authoritative server price calculation (NEVER trust client calculations)
     let unitRateNGN = service.retailPriceNGN;
     try {
-      const { data: dbOverride } = await supabaseAdmin
-        .from("service_pricing")
-        .select("retail_price_ngn")
-        .eq("id", service.id)
-        .single();
-      if (dbOverride?.retail_price_ngn) {
-        unitRateNGN = Number(dbOverride.retail_price_ngn);
+      const { data: configOrder } = await supabaseAdmin
+        .from("orders")
+        .select("details")
+        .eq("provider_order_id", "SYSTEM_PRICING_CONFIG")
+        .limit(1)
+        .maybeSingle();
+
+      const overrides = (configOrder?.details as Record<string, any>) || {};
+      if (overrides[service.id]) {
+        unitRateNGN = Number(overrides[service.id]);
       }
     } catch {
       // Use standard catalog rate
