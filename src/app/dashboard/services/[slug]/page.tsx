@@ -354,11 +354,23 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
       category: "likes",
       quality: "HIGH",
       qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
-      name: "TikTok Video Likes [Real Profiles | Instant Start 🔥]",
+      name: "TikTok Video Likes [Real Profiles | Instant Start 🔥 | 30-Day Refill]",
       speed: "10k/Day",
       minMax: "10 - 10,000",
-      rate: 1850,
+      rate: 3800,
       badge: "Instant Start 🔥"
+    },
+    {
+      id: "tt-lik-budget",
+      platform: "tiktok",
+      category: "likes",
+      quality: "LOW",
+      qualityColor: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/60",
+      name: "TikTok Video Likes [Standard Queue | Budget Saver (1-2 Hrs)]",
+      speed: "50k/Day",
+      minMax: "50 - 50,000",
+      rate: 1500,
+      badge: "Budget Saver"
     },
     {
       id: "tt-viw-viral",
