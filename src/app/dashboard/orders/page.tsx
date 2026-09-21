@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Search, Eye, EyeOff, Store, Zap, Globe, 
-  ShoppingBag, Loader2, ArrowRight, ExternalLink
+  ShoppingBag, Loader2, ArrowRight, ExternalLink, Copy, Check
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
@@ -63,6 +63,7 @@ export default function OrdersPage() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [revealedLogs, setRevealedLogs] = useState<Record<string, boolean>>({});
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -296,6 +297,35 @@ export default function OrdersPage() {
                         JSON.stringify(order.details || {})
                       )}
                     </div>
+
+                    {order.service_type === "sms" && (
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <Link href={`/verify/${order.id}`} target="_blank">
+                          <Button 
+                            size="sm"
+                            variant="outline"
+                            className="h-8 px-2.5 rounded-xl text-[11px] font-bold shrink-0 bg-white dark:bg-slate-800 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center gap-1"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            <span>Client Portal</span>
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            const url = `${window.location.origin}/verify/${order.id}`;
+                            navigator.clipboard.writeText(url);
+                            setCopiedOrderId(order.id);
+                            setTimeout(() => setCopiedOrderId(null), 2000);
+                          }}
+                          className="h-8 px-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                          title="Copy Link for Client"
+                        >
+                          {copiedOrderId === order.id ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                        </Button>
+                      </div>
+                    )}
 
                     {order.service_type === "log" && (
                       <Button 

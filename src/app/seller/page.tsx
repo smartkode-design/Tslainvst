@@ -210,6 +210,33 @@ export default function SellerDashboard() {
         </CardContent>
       </Card>
 
+      {/* Reseller Virtual Numbers & Client Links Quick Card */}
+      <Card className="border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-primary/5">
+        <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">📲</span>
+              <h3 className="text-base font-black text-foreground">Vendor Client OTP Portals</h3>
+              <Badge className="bg-emerald-500 text-white text-[9px] font-black py-0">Hot Feature</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground max-w-xl">
+              Buy wholesale virtual numbers for WhatsApp, Telegram & 50+ services and send your client a live OTP tracking link. They see their number and OTP in real-time with zero registration!
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button asChild className="rounded-xl font-bold text-xs h-10 px-4 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
+              <Link href="/dashboard/services/virtual-no">
+                <span>Buy Virtual Number</span>
+                <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="rounded-xl font-bold text-xs h-10 px-4">
+              <Link href="/dashboard/orders">View OTP Orders</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Info Banner */}
       <div className="p-4 rounded-2xl border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20 flex gap-3">
         <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />

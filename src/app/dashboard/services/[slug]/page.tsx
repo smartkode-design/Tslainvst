@@ -75,6 +75,8 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
   const [isCancelingSms, setIsCancelingSms] = useState(false);
   const [generatedPhone, setGeneratedPhone] = useState<string>("");
   const [smsOrderId, setSmsOrderId] = useState<string | number>("");
+  const [systemOrderId, setSystemOrderId] = useState<string>("");
+  const [copiedShareLink, setCopiedShareLink] = useState(false);
   const [isGeneratingNumber, setIsGeneratingNumber] = useState(false);
   const [smsError, setSmsError] = useState<string | null>(null);
 
@@ -1405,6 +1407,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                       }
                       setGeneratedPhone(data.phone || `+${activeCountryObj.code.replace('+', '')} 812 ${Math.floor(100000 + Math.random() * 900000)}`);
                       setSmsOrderId(data.orderId || `SMS_${Date.now()}`);
+                      setSystemOrderId(data.systemOrderId || data.orderId || "");
                       setHasGeneratedNumber(true);
                       setSmsReceived(false);
                       setReceivedSmsCode("");
@@ -1478,6 +1481,56 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
                 {copiedNumber ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
                 {copiedNumber ? "Copied to Clipboard!" : "Copy Number"}
               </Button>
+            </div>
+
+            {/* Vendor Client Portal Share Card (No Login Required for Client) */}
+            <div className="bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-primary/10 border border-emerald-500/30 rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-2xl">📲</span>
+                  <div>
+                    <h4 className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm flex items-center gap-1.5">
+                      Share Live Portal with Client
+                      <span className="bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                        No Login
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Send this live link to your client so they can see this number & watch their OTP arrive in real-time.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    onClick={() => {
+                      const shareId = systemOrderId || smsOrderId;
+                      const shareUrl = `${window.location.origin}/verify/${shareId}`;
+                      navigator.clipboard.writeText(shareUrl);
+                      setCopiedShareLink(true);
+                      setTimeout(() => setCopiedShareLink(false), 2500);
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="h-9 px-3.5 rounded-xl border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 bg-white dark:bg-slate-800"
+                  >
+                    {copiedShareLink ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    <span>{copiedShareLink ? "Link Copied!" : "Copy Client Link"}</span>
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const shareId = systemOrderId || smsOrderId;
+                      const shareUrl = `${window.location.origin}/verify/${shareId}`;
+                      const msg = `Hello! Here is your ${activeServiceObj.name} verification number:\n📱 Number: ${generatedPhone}\n\n👉 Track your OTP live here (No login needed):\n${shareUrl}\n\nCopy the number, request your code in the app, and it will appear on that link!`;
+                      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+                    }}
+                    size="sm"
+                    className="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs"
+                  >
+                    <span>Send on WhatsApp</span>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
             </div>
 
             {/* Live SMS Receiver Status Box */}
