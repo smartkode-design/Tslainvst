@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, CheckCircle2, ChevronDown, Smartphone, Globe, ShieldCheck, Zap, 
@@ -1560,6 +1561,31 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
     const activeRate = dynamicPricing[activeService.id] || activeService.rate;
     const totalPrice = ((parseInt(smmQuantity) || 0) / 1000) * activeRate;
 
+    const isPostTarget = ["likes", "views", "comments", "shares", "saves", "retweets"].includes(activeService.category);
+    const targetLabel = isPostTarget
+      ? `${activeService.platform === "tiktok" ? "TikTok" : activeService.platform === "instagram" ? "Instagram" : activeService.platform === "youtube" ? "YouTube" : activeService.platform === "twitter" ? "Twitter / X" : "Target"} Post / Video URL`
+      : `${activeService.platform === "tiktok" ? "TikTok" : activeService.platform === "instagram" ? "Instagram" : activeService.platform === "youtube" ? "YouTube" : activeService.platform === "telegram" ? "Telegram" : "Target"} Profile Link / Channel URL`;
+
+    const targetPlaceholder = isPostTarget
+      ? activeService.platform === "tiktok"
+        ? "https://vt.tiktok.com/... or https://www.tiktok.com/@user/video/..."
+        : activeService.platform === "instagram"
+        ? "https://www.instagram.com/p/... or /reel/..."
+        : activeService.platform === "youtube"
+        ? "https://www.youtube.com/watch?v=..."
+        : activeService.platform === "twitter"
+        ? "https://x.com/username/status/..."
+        : "https://..."
+      : activeService.platform === "tiktok"
+      ? "https://www.tiktok.com/@your_username"
+      : activeService.platform === "instagram"
+      ? "https://instagram.com/your_handle"
+      : activeService.platform === "twitter"
+      ? "https://x.com/your_handle"
+      : activeService.platform === "telegram"
+      ? "https://t.me/your_channel"
+      : "https://...";
+
     return (
       <div className="max-w-4xl mx-auto space-y-6 pb-24 md:pb-12 pt-2 md:pt-4 px-4">
         {/* Header */}
@@ -1591,7 +1617,7 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
           <div className="flex flex-wrap items-center gap-2 font-bold text-[11px]">
             <span className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 rounded-md">🟡 LOW</span>
             <span className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md">🟢 MEDIUM</span>
-            <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded-md">🔵 HIGH</span>
+            <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 px-2 py-0.5 rounded-md">🔵 HIGH</span>
             <span className="flex items-center gap-1 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 px-2 py-0.5 rounded-md">🟣 FARM</span>
             <span className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 px-2 py-0.5 rounded-md">🟠 PROVIDER</span>
           </div>
@@ -1682,15 +1708,19 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2">
                 <span className="h-5 w-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-bold">3</span>
-                Target Profile Link or Post URL
+                {targetLabel}
               </label>
               <Input 
                 value={smmLink}
                 onChange={(e) => setSmmLink(e.target.value)}
-                placeholder="https://instagram.com/your_handle"
+                placeholder={targetPlaceholder}
                 className="h-13 rounded-2xl bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 font-semibold text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Make sure the account is set to public, not private.</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                {isPostTarget 
+                  ? "Ensure the specific post/video is public and not age-restricted." 
+                  : "Ensure the profile or channel is set to public, not private."}
+              </p>
             </div>
 
             {/* Quantity */}
@@ -1724,6 +1754,17 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             </div>
           </div>
 
+          {/* SMM Delivery Queue Notice */}
+          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-200 space-y-1.5">
+            <div className="flex items-center gap-2 font-bold">
+              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>Automated Delivery & Start Window:</span>
+            </div>
+            <p className="pl-6 text-[11px] leading-relaxed text-amber-900/80 dark:text-amber-200/90 font-medium">
+              Orders enter the network worker queue automatically. <strong>Start time is typically 15 to 60 minutes</strong> (speed: {activeService.speed}). Likes & views will gradually register on your {activeService.platform} link as the worker pool processes the request.
+            </p>
+          </div>
+
           {/* Checkout Breakdown */}
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700 flex items-center justify-between">
             <div className="space-y-0.5">
@@ -1744,9 +1785,31 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
           )}
 
           {smmSuccess ? (
-            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-center font-bold text-sm flex items-center justify-center gap-2">
-              <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              <span>Order Placed! Order ID #{smmPlacedOrder?.orderId || smmPlacedOrder?.systemOrderId || "SMM-74912"} is active & processing.</span>
+            <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 space-y-3">
+              <div className="flex items-center gap-2.5 font-bold text-sm sm:text-base">
+                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>Order Placed! Order ID #{smmPlacedOrder?.orderId || smmPlacedOrder?.systemOrderId || "SMM-74912"} is active & processing.</span>
+              </div>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 pl-7 leading-relaxed font-medium">
+                Your boost has been scheduled. Engagements normally start delivering to your link within <strong>15–60 minutes</strong>. You can monitor live fulfillment on your Order History page.
+              </p>
+              <div className="pl-7 pt-1 flex flex-wrap items-center gap-3">
+                <Link href="/dashboard/orders">
+                  <Button size="sm" className="h-9 px-4 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
+                    View in Order History <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                  </Button>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSmmSuccess(false);
+                    setSmmLink("");
+                  }}
+                  className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+                >
+                  Boost Another Link
+                </button>
+              </div>
             </div>
           ) : (
             <Button 

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Search, Eye, EyeOff, Store, Zap, Globe, 
-  ShoppingBag, Loader2, ArrowRight
+  ShoppingBag, Loader2, ArrowRight, ExternalLink
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
@@ -83,6 +83,32 @@ export default function OrdersPage() {
 
       if (!error && data) {
         setOrders(data);
+
+        // Auto-sync processing SMM orders with provider network
+        const hasProcessingSmm = data.some(
+          (o: any) => o.service_type === "smm" && (o.status === "processing" || o.status === "pending")
+        );
+        if (hasProcessingSmm) {
+          fetch("/api/services/smm/sync", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: session.user.id }),
+          })
+            .then((res) => res.json())
+            .then((syncRes) => {
+              if (syncRes.synced > 0) {
+                supabase
+                  .from("orders")
+                  .select("*")
+                  .eq("user_id", session.user.id)
+                  .order("created_at", { ascending: false })
+                  .then(({ data: refreshed }) => {
+                    if (refreshed) setOrders(refreshed);
+                  });
+              }
+            })
+            .catch(() => {});
+        }
       }
       setLoading(false);
     }
@@ -222,14 +248,40 @@ export default function OrdersPage() {
                 {/* Delivery Box / OTP / Target Info */}
                 {(order.target || order.otp_code || order.details) && (
                   <div className="p-3.5 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200/70 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="font-mono text-slate-700 dark:text-slate-300 break-all">
-                      {order.service_type === "log" && !isRevealed 
-                        ? "••••••••••••••••••••••••••••••••••••••••••••" 
-                        : order.otp_code 
-                        ? `OTP: ${order.otp_code} | Target: ${order.target || "N/A"}`
-                        : order.target 
-                        ? `Target: ${order.target}`
-                        : JSON.stringify(order.details || {})}
+                    <div className="font-mono text-slate-700 dark:text-slate-300 break-all w-full">
+                      {order.service_type === "log" && !isRevealed ? (
+                        "••••••••••••••••••••••••••••••••••••••••••••"
+                      ) : order.service_type === "smm" ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-sans font-bold text-slate-500 text-[11px] uppercase tracking-wider">Target:</span>
+                            <a
+                              href={order.target?.startsWith("http") ? order.target : `https://${order.target}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-primary hover:underline font-mono inline-flex items-center gap-1 font-bold"
+                            >
+                              {order.target} <ExternalLink className="h-3 w-3 inline shrink-0" />
+                            </a>
+                            {order.quantity && (
+                              <span className="font-sans font-semibold text-slate-400 dark:text-slate-500 text-xs">
+                                ({order.quantity.toLocaleString()} units)
+                              </span>
+                            )}
+                          </div>
+                          {(order.status === "processing" || order.status === "pending") && (
+                            <p className="font-sans text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                              ⚡ Queued with network · Delivery typically commences within 15–60 mins.
+                            </p>
+                          )}
+                        </div>
+                      ) : order.otp_code ? (
+                        `OTP: ${order.otp_code} | Target: ${order.target || "N/A"}`
+                      ) : order.target ? (
+                        `Target: ${order.target}`
+                      ) : (
+                        JSON.stringify(order.details || {})
+                      )}
                     </div>
 
                     {order.service_type === "log" && (
