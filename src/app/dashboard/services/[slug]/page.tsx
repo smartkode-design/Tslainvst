@@ -354,11 +354,11 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
       category: "likes",
       quality: "HIGH",
       qualityColor: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60",
-      name: "TikTok Video Likes [Real Profile Engagements]",
+      name: "TikTok Video Likes [Real Profiles | Instant Start 🔥]",
       speed: "10k/Day",
-      minMax: "50 - 50,000",
-      rate: 950,
-      badge: "Instant"
+      minMax: "10 - 10,000",
+      rate: 1850,
+      badge: "Instant Start 🔥"
     },
     {
       id: "tt-viw-viral",
