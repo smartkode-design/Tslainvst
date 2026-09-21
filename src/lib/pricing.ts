@@ -811,42 +811,51 @@ export function calculateSmsPrice(
   const s = serviceId.toLowerCase();
   const c = countryId.toLowerCase();
 
-  // 1. Check custom overrides from admin if present
+  // 1. Direct country + service override if set
   const exactKey = `sms_${s}_${c}`;
   if (dynamicOverrides[exactKey]) {
     return dynamicOverrides[exactKey];
   }
 
-  // 2. Specific Matrix Table for Requested Services
+  // 2. Base service override from Admin Pricing
+  const serviceOverride = dynamicOverrides[`sms_${s}`];
+
+  // Specific Matrix Table for Requested Services
   if (s === "googlevoice") {
-    // US, UK, and Canada Google Voice
+    if (serviceOverride) return serviceOverride;
     return 3500;
   }
 
   if (s === "whatsapp") {
-    if (c === "us") return 2500;
-    if (c === "gb") return 2700;
-    if (c === "au") return 2800;
-    if (c === "ca") return 2400;
-    if (["de", "fr", "nl", "es", "pl", "se", "tr"].includes(c)) return 2300;
-    if (["ng", "gh", "ke", "za", "in", "id", "ph", "my", "vn", "br"].includes(c)) return 1400;
-    return 1800;
+    const base = serviceOverride || 1400;
+    if (c === "us") return base + 1100; // 2500
+    if (c === "gb") return base + 1300; // 2700
+    if (c === "au") return base + 1400; // 2800
+    if (c === "ca") return base + 1000; // 2400
+    if (["de", "fr", "nl", "es", "pl", "se", "tr"].includes(c)) return base + 900; // 2300
+    return base;
   }
 
   if (s === "telegram") {
-    if (c === "us") return 2250; // Market competitive rate (beating ₦2,300 competitor price)
-    if (c === "gb") return 4500;
-    if (c === "au") return 4300;
-    if (c === "ca") return 3900;
-    if (["de", "fr", "nl", "es", "pl", "se", "tr"].includes(c)) return 3800;
-    return 2250;
+    const base = serviceOverride || 2250;
+    if (c === "us") return base; // 2,250
+    if (c === "ca") return base + 100; // 2,350
+    if (c === "gb") return base + 250; // 2,500
+    if (c === "au") return base + 300; // 2,550
+    if (["de", "fr", "nl", "es", "se"].includes(c)) return base + 150; // 2,400
+    if (["pl", "tr"].includes(c)) return base - 50; // 2,200
+    if (c === "ng") return 1400;
+    if (["gh", "ke", "za", "br"].includes(c)) return 1500;
+    if (["in", "id"].includes(c)) return 1200;
+    if (["ph", "my", "vn"].includes(c)) return 1300;
+    return base;
   }
 
   if (s === "signal") {
-    if (c === "us" || c === "gb" || c === "au") return 1200;
-    if (c === "ca" || ["de", "fr", "nl", "es", "pl", "se", "tr"].includes(c)) return 1100;
-    if (["ng", "gh", "ke", "za", "in", "id", "ph", "my", "vn", "br"].includes(c)) return 900;
-    return 1000;
+    const base = serviceOverride || 900;
+    if (c === "us" || c === "gb" || c === "au") return base + 300; // 1200
+    if (c === "ca" || ["de", "fr", "nl", "es", "pl", "se", "tr"].includes(c)) return base + 200; // 1100
+    return base;
   }
 
   if (s === "openai" || s === "claude") {

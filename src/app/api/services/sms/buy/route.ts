@@ -5,9 +5,21 @@ import { DEFAULT_PRICING, calculateSmsPrice, isServiceSupportedInCountry } from 
 
 export const dynamic = "force-dynamic";
 
-// Calculate authoritative server price
-function getAuthoritativePrice(country: string, service: string): number {
-  return calculateSmsPrice(service, country);
+// Calculate authoritative server price using persistent dynamic overrides
+async function getAuthoritativePrice(country: string, service: string): Promise<number> {
+  try {
+    const { data: configOrder } = await supabaseAdmin
+      .from("orders")
+      .select("details")
+      .eq("provider_order_id", "SYSTEM_PRICING_CONFIG")
+      .limit(1)
+      .maybeSingle();
+
+    const overrides = (configOrder?.details as Record<string, any>) || {};
+    return calculateSmsPrice(service, country, overrides);
+  } catch {
+    return calculateSmsPrice(service, country);
+  }
 }
 
 export async function POST(req: Request) {
@@ -53,7 +65,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Compute authoritative price strictly on the server (never trust client retailPrice)
-    const authoritativePrice = getAuthoritativePrice(country, service);
+    const authoritativePrice = await getAuthoritativePrice(country, service);
 
     // 3. Check user wallet balance
     const { data: wallet, error: walletErr } = await supabaseAdmin

@@ -38,6 +38,7 @@ export async function GET(req: Request) {
           email
         )
       `)
+      .neq("provider_order_id", "SYSTEM_PRICING_CONFIG")
       .order("created_at", { ascending: false });
 
     if (statusFilter && statusFilter !== "all") {

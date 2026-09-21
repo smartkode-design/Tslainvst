@@ -110,6 +110,9 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
           data.pricing.forEach((item: any) => {
             map[item.id] = Number(item.retailNGN);
           });
+          if (data.overrides) {
+            Object.assign(map, data.overrides);
+          }
           setDynamicPricing(map);
         }
       })
