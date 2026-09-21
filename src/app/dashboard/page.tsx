@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { 
   Plus, ArrowUpRight, ArrowDownLeft, Smartphone, Wifi, Zap, Globe, 
-  Store, Eye, EyeOff, ShieldCheck, ChevronRight, History, Loader2
+  Store, Eye, EyeOff, ShieldCheck, ChevronRight, History, Loader2, Gift
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "./layout";
@@ -126,6 +126,13 @@ export default function DashboardOverview() {
       bgColor: "bg-teal-50 dark:bg-teal-950/50 hover:bg-teal-100/80 dark:hover:bg-teal-900/50" 
     },
     { 
+      icon: Gift, 
+      label: "Refer & Earn", 
+      href: "/dashboard/referrals", 
+      iconColor: "text-rose-600 dark:text-rose-400",
+      bgColor: "bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100/80 dark:hover:bg-rose-900/50" 
+    },
+    { 
       icon: ShieldCheck, 
       label: "Get Affiliate Site", 
       href: "/dashboard/services/affiliate-site", 
@@ -209,6 +216,28 @@ export default function DashboardOverview() {
           </div>
         </div>
       </div>
+
+      {/* Refer & Earn Promo Banner */}
+      <Link href="/dashboard/referrals" className="block group">
+        <div className="relative overflow-hidden rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white shadow-md shadow-orange-500/15 transition-all hover:shadow-lg hover:shadow-orange-500/25">
+          <div className="relative z-10 flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-[10px] font-black tracking-wide uppercase">
+                <Gift className="h-3 w-3" /> 5% Commission Lifetime
+              </div>
+              <h3 className="text-base sm:text-lg font-black tracking-tight leading-snug">
+                Invite Friends, Earn 5% On Every Deposit!
+              </h3>
+              <p className="text-xs text-white/90 font-medium line-clamp-1 sm:line-clamp-none">
+                Share your referral code & link. Earn automatic instant wallet bonuses on every top-up.
+              </p>
+            </div>
+            <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-white text-orange-600 flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
+              <Gift className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+      </Link>
 
       {/* Quick Actions */}
       <div className="space-y-3.5">

@@ -137,6 +137,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const mobileTabs = [
     { name: "Home", href: "/dashboard", icon: Home },
     { name: "Market", href: "/marketplace", icon: ShoppingBag },
+    { name: "Referral", href: "/dashboard/referrals", icon: Gift },
     { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
     { name: "Profile", href: "/settings", icon: User },
   ];
@@ -326,15 +327,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </main>
 
           {/* Mobile Bottom Tab Bar */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 h-18 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 z-40 pb-1 shadow-[0_-4px_25px_rgba(0,0,0,0.04)] flex items-center justify-around px-2">
+          <nav className="md:hidden fixed bottom-0 left-0 right-0 h-18 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 z-40 pb-1 shadow-[0_-4px_25px_rgba(0,0,0,0.04)] flex items-center justify-around px-1">
             {mobileTabs.map((tab) => {
               const isActive = pathname === tab.href;
+              const isReferral = tab.href === "/dashboard/referrals";
               return (
-                <Link key={tab.name} href={tab.href} className="flex flex-col items-center justify-center w-full h-full gap-1 pt-1">
-                  <div className={cn("p-1.5 rounded-xl transition-all duration-200", isActive ? "text-primary bg-primary/10 dark:bg-primary/20" : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300")}>
+                <Link key={tab.name} href={tab.href} className="flex flex-col items-center justify-center w-full h-full gap-1 pt-1 relative">
+                  <div className={cn(
+                    "p-1.5 rounded-xl transition-all duration-200 relative", 
+                    isActive 
+                      ? "text-primary bg-primary/10 dark:bg-primary/20" 
+                      : isReferral
+                      ? "text-amber-500 bg-amber-50 dark:bg-amber-950/40"
+                      : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                  )}>
                     <tab.icon className={cn("h-5 w-5", isActive && "fill-primary/20")} strokeWidth={isActive ? 2.5 : 2} />
+                    {isReferral && (
+                      <span className="absolute -top-1 -right-2 bg-gradient-to-r from-amber-500 to-rose-500 text-white text-[8px] font-black px-1 rounded-full shadow-xs leading-tight">
+                        5%
+                      </span>
+                    )}
                   </div>
-                  <span className={cn("text-[10px] font-bold transition-all", isActive ? "text-primary" : "text-slate-400 dark:text-slate-500")}>
+                  <span className={cn(
+                    "text-[10px] font-bold transition-all truncate text-center", 
+                    isActive ? "text-primary" : isReferral ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-slate-400 dark:text-slate-500"
+                  )}>
                     {tab.name}
                   </span>
                 </Link>
