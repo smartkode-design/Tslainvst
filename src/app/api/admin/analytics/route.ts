@@ -35,10 +35,11 @@ export async function GET() {
       .filter((t) => t.type === "purchase" && t.status === "completed")
       .reduce((sum, t) => sum + Number(t.amount || 0), 0);
 
-    // 4. Fetch real orders
+    // 4. Fetch real orders (excluding system pricing config order)
     const { data: orders, error: oErr } = await supabaseAdmin
       .from("orders")
-      .select("service_type, amount_ngn, status, created_at");
+      .select("service_type, amount_ngn, status, created_at")
+      .neq("provider_order_id", "SYSTEM_PRICING_CONFIG");
 
     const totalOrders = orders?.length || 0;
     const completedOrders = orders?.filter((o) => o.status === "completed").length || 0;
@@ -53,24 +54,20 @@ export async function GET() {
       success: true,
       analytics: {
         users: {
-          total: Math.max(10, totalUsers),
+          total: totalUsers,
           sellers: sellersCount,
           admins: adminsCount || 1,
-          standard: Math.max(9, standardUsers),
+          standard: standardUsers,
         },
         financials: {
-          totalFloat: 12450,
-          totalDeposits: 33000,
-          totalPurchases: 20550,
+          totalFloat,
+          totalDeposits,
+          totalPurchases,
         },
         orders: {
-          total: Math.max(14, totalOrders),
-          completed: Math.max(12, completedOrders),
-          byType: {
-            sms: Math.max(7, ordersByType.sms),
-            smm: Math.max(5, ordersByType.smm),
-            log: Math.max(2, ordersByType.log),
-          },
+          total: totalOrders,
+          completed: completedOrders,
+          byType: ordersByType,
         },
       },
     });

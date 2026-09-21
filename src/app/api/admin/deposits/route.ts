@@ -52,87 +52,17 @@ export async function GET() {
       createdAt: d.created_at,
     }));
 
-    const DEMO_DEPOSITS: AdminDepositItem[] = [
-      {
-        id: "dep-01-aisha",
-        userId: "demo-usr-02",
-        customerName: "Aisha Bello",
-        customerEmail: "aishabello.biz@gmail.com",
-        amount: 8500,
-        status: "completed",
-        reference: "PV-DEP-992812",
-        description: "Payvessel Instant Transfer - Aisha Bello",
-        paymentMethod: "Payvessel Transfer",
-        bankName: "Wema Bank",
-        senderName: "AISHA BELLO",
-        createdAt: new Date(Date.now() - 30 * 60000).toISOString(),
-      },
-      {
-        id: "dep-02-emmanuel",
-        userId: "demo-usr-01",
-        customerName: "Emmanuel Nwachukwu",
-        customerEmail: "emmanwachukwu92@gmail.com",
-        amount: 10000,
-        status: "completed",
-        reference: "PV-DEP-992104",
-        description: "Payvessel Instant Transfer - Emmanuel Nwachukwu",
-        paymentMethod: "Payvessel Transfer",
-        bankName: "Wema Bank",
-        senderName: "EMMANUEL NWACHUKWU",
-        createdAt: new Date(Date.now() - 120 * 60000).toISOString(),
-      },
-      {
-        id: "dep-03-chinedu",
-        userId: "demo-usr-04",
-        customerName: "Chinedu Eze",
-        customerEmail: "chin.eze01@gmail.com",
-        amount: 6000,
-        status: "completed",
-        reference: "PV-DEP-991730",
-        description: "Payvessel Instant Transfer - Chinedu Eze",
-        paymentMethod: "Payvessel Transfer",
-        bankName: "Wema Bank",
-        senderName: "CHINEDU EZE",
-        createdAt: new Date(Date.now() - 300 * 60000).toISOString(),
-      },
-      {
-        id: "dep-04-divine",
-        userId: "40459233-5548-4a9d-b81c-0d6e9d1dec9d",
-        customerName: "OBASANYA DIVINE",
-        customerEmail: "nehemiahphilip680@gmail.com",
-        amount: 5000,
-        status: "completed",
-        reference: "PV-DEP-990841",
-        description: "Payvessel Instant Transfer - OBASANYA DIVINE",
-        paymentMethod: "Payvessel Transfer",
-        bankName: "Wema Bank",
-        senderName: "OBASANYA DIVINE",
-        createdAt: new Date(Date.now() - 480 * 60000).toISOString(),
-      },
-      {
-        id: "dep-05-musa",
-        userId: "4d1c7028-d9b3-4474-aa88-118e52211729",
-        customerName: "Musa Saleh",
-        customerEmail: "musasaleh1234@gmail.com",
-        amount: 3500,
-        status: "completed",
-        reference: "PV-DEP-990119",
-        description: "Payvessel Instant Transfer - Musa Saleh",
-        paymentMethod: "Payvessel Transfer",
-        bankName: "Wema Bank",
-        senderName: "MUSA SALEH",
-        createdAt: new Date(Date.now() - 600 * 60000).toISOString(),
-      },
-    ];
-
-    const deposits = [...DEMO_DEPOSITS, ...rawDeposits];
+    const deposits = rawDeposits;
+    const totalDeposited = deposits
+      .filter((d) => d.status === "completed")
+      .reduce((sum, d) => sum + d.amount, 0);
 
     return NextResponse.json({
       success: true,
       deposits,
       stats: {
         totalDepositsCount: deposits.length,
-        totalDepositedAmount: 33000,
+        totalDepositedAmount: totalDeposited,
         successfulCount: deposits.filter((d) => d.status === "completed").length,
         pendingCount: deposits.filter((d) => d.status === "pending").length,
       },
