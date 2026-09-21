@@ -21,6 +21,7 @@ export default function SettingsPage() {
     full_name: string;
     email: string;
     phone: string;
+    role: string;
     initials: string;
   } | null>(null);
 
@@ -32,7 +33,7 @@ export default function SettingsPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, email, phone")
+        .select("full_name, email, phone, role")
         .eq("id", session.user.id)
         .single();
 
@@ -41,6 +42,7 @@ export default function SettingsPage() {
         full_name: fullName,
         email: profile?.email || session.user.email || "",
         phone: profile?.phone || "",
+        role: profile?.role || "user",
         initials: getInitials(fullName),
       });
     }
@@ -51,6 +53,8 @@ export default function SettingsPage() {
     await supabase.auth.signOut();
     router.replace("/login");
   };
+
+  const isSeller = user?.role === "seller" || user?.role === "admin";
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#080c14] text-slate-900 dark:text-slate-100 selection:bg-primary/20 transition-colors duration-200">
@@ -82,11 +86,48 @@ export default function SettingsPage() {
               {user?.email ?? ""}
               {user?.phone ? ` · ${user.phone}` : ""}
             </p>
-            <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-              <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Active Member
-            </span>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Active Member
+              </span>
+              {isSeller && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-black text-orange-700 dark:text-orange-300 bg-orange-50 dark:bg-orange-950/60 px-2 py-0.5 rounded-full border border-orange-200 dark:border-orange-800">
+                  Verified Merchant
+                </span>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Merchant & Seller Hub Quick Access Banner */}
+        {isSeller ? (
+          <div className="bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-3xl p-5 shadow-lg shadow-orange-500/15 flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full">
+                Merchant Portal
+              </span>
+              <h3 className="text-base font-black">Your Seller Hub</h3>
+              <p className="text-xs text-white/90">List accounts, manage inventory and track instant 90% payouts.</p>
+            </div>
+            <Link href="/seller" className="shrink-0">
+              <Button className="h-11 px-5 rounded-2xl bg-white text-orange-600 hover:bg-slate-100 font-black text-xs shadow-md border-0">
+                Open Hub →
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">Become a Verified Seller</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Sell aged accounts, logs, or services on TSLA Marketplace.</p>
+            </div>
+            <Link href="/dashboard/seller-apply" className="shrink-0">
+              <Button variant="outline" className="h-10 px-4 rounded-xl border-orange-500/40 text-orange-600 dark:text-orange-400 font-bold text-xs">
+                Apply Now →
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Transaction PIN */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 shadow-sm space-y-6">

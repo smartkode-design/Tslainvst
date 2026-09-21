@@ -132,6 +132,22 @@ export default function DashboardOverview() {
       iconColor: "text-rose-600 dark:text-rose-400",
       bgColor: "bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100/80 dark:hover:bg-rose-900/50" 
     },
+    ...(user?.role === "seller" || user?.role === "admin"
+      ? [{
+          icon: Store,
+          label: "Seller Hub",
+          href: "/seller",
+          iconColor: "text-orange-600 dark:text-orange-400",
+          bgColor: "bg-orange-50 dark:bg-orange-950/50 hover:bg-orange-100/80 dark:hover:bg-orange-900/50"
+        }]
+      : [{
+          icon: Store,
+          label: "Become Seller",
+          href: "/dashboard/seller-apply",
+          iconColor: "text-orange-600 dark:text-orange-400",
+          bgColor: "bg-orange-50 dark:bg-orange-950/50 hover:bg-orange-100/80 dark:hover:bg-orange-900/50"
+        }]
+    ),
     { 
       icon: ShieldCheck, 
       label: "Get Affiliate Site", 
@@ -216,6 +232,30 @@ export default function DashboardOverview() {
           </div>
         </div>
       </div>
+
+      {/* Seller Hub Hero Banner for Verified Sellers */}
+      {(user?.role === "seller" || user?.role === "admin") && (
+        <Link href="/seller" className="block group">
+          <div className="relative overflow-hidden rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 text-white shadow-md shadow-orange-600/20 transition-all hover:shadow-lg">
+            <div className="relative z-10 flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-[10px] font-black tracking-wide uppercase">
+                  <Store className="h-3 w-3" /> Merchant Portal
+                </div>
+                <h3 className="text-base sm:text-lg font-black tracking-tight leading-snug">
+                  Your Seller Hub is Ready!
+                </h3>
+                <p className="text-xs text-white/90 font-medium line-clamp-1 sm:line-clamp-none">
+                  List aged accounts, logs & services. You earn 90% instant payout on every sale.
+                </p>
+              </div>
+              <div className="h-11 w-11 sm:h-12 sm:w-12 rounded-2xl bg-white text-orange-600 flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
+                <Store className="h-6 w-6" />
+              </div>
+            </div>
+          </div>
+        </Link>
+      )}
 
       {/* Refer & Earn Promo Banner */}
       <Link href="/dashboard/referrals" className="block group">

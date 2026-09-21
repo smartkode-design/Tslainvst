@@ -140,10 +140,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Settings", href: "/settings", icon: Settings },
   ];
 
+  const isSeller = user?.role === "seller" || user?.role === "admin";
+
   const mobileTabs = [
     { name: "Home", href: "/dashboard", icon: Home },
     { name: "Market", href: "/marketplace", icon: ShoppingBag },
-    { name: "Referral", href: "/dashboard/referrals", icon: Gift },
+    ...(isSeller
+      ? [{ name: "Seller", href: "/seller", icon: Store, isSeller: true }]
+      : []
+    ),
+    { name: "Referral", href: "/dashboard/referrals", icon: Gift, isReferral: true },
     { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
     { name: "Profile", href: "/settings", icon: User },
   ];
@@ -270,20 +276,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="text-sm font-black tracking-tight text-slate-900 dark:text-white leading-none">{user?.firstName} 👋</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {(user?.role === "seller" || user?.role === "admin") && (
+                <Link href="/seller">
+                  <Button variant="outline" size="sm" className="h-8 px-2 rounded-xl border-orange-500/50 text-orange-600 dark:text-orange-400 font-black text-[11px] flex items-center gap-1 bg-orange-50 dark:bg-orange-950/40 shadow-xs hover:bg-orange-100">
+                    <Store className="h-3.5 w-3.5 text-orange-500" />
+                    Seller
+                  </Button>
+                </Link>
+              )}
               {user?.role === "admin" && (
                 <Link href="/admin">
-                  <Button variant="outline" size="sm" className="h-9 px-2.5 rounded-xl border-indigo-500/40 text-indigo-600 dark:text-indigo-400 font-black text-[11px] flex items-center gap-1.5 bg-indigo-50/60 dark:bg-indigo-950/40 shadow-xs">
+                  <Button variant="outline" size="sm" className="h-8 px-2 rounded-xl border-indigo-500/40 text-indigo-600 dark:text-indigo-400 font-black text-[11px] flex items-center gap-1 bg-indigo-50/60 dark:bg-indigo-950/40 shadow-xs">
                     <Shield className="h-3.5 w-3.5 text-indigo-500" />
                     Admin
                   </Button>
                 </Link>
               )}
-              <ThemeToggle className="h-9 w-9 rounded-xl" />
+              <ThemeToggle className="h-8 w-8 rounded-xl" />
               <Link href="/support">
-                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 relative">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 relative">
                   <Bell className="h-4 w-4" />
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary border-2 border-white dark:border-slate-900"></span>
+                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary border-2 border-white dark:border-slate-900"></span>
                 </Button>
               </Link>
             </div>
@@ -301,6 +315,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
             </div>
             <div className="flex items-center gap-3.5">
+              {(user?.role === "seller" || user?.role === "admin") && (
+                <Link href="/seller">
+                  <Button variant="outline" className="h-11 px-4 rounded-xl border-orange-500/40 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 font-black text-xs shadow-xs flex items-center gap-2">
+                    <Store className="h-4 w-4 text-orange-500" />
+                    Seller Hub
+                  </Button>
+                </Link>
+              )}
               {user?.role === "admin" && (
                 <Link href="/admin">
                   <Button className="h-11 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-primary text-white hover:opacity-90 font-black text-xs shadow-md shadow-indigo-500/20 flex items-center gap-2">
@@ -332,29 +354,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Mobile Bottom Tab Bar */}
           <nav className="md:hidden fixed bottom-0 left-0 right-0 h-18 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 z-40 pb-1 shadow-[0_-4px_25px_rgba(0,0,0,0.04)] flex items-center justify-around px-1">
-            {mobileTabs.map((tab) => {
-              const isActive = pathname === tab.href;
-              const isReferral = tab.href === "/dashboard/referrals";
+            {mobileTabs.map((tab: any) => {
+              const isActive = pathname === tab.href || (tab.href !== "/dashboard" && pathname.startsWith(tab.href));
+              const isReferral = tab.isReferral;
+              const isSellerTab = tab.isSeller;
               return (
-                <Link key={tab.name} href={tab.href} className="flex flex-col items-center justify-center w-full h-full gap-1 pt-1 relative">
+                <Link key={tab.name} href={tab.href} className="flex flex-col items-center justify-center w-full h-full gap-0.5 pt-1 relative">
                   <div className={cn(
                     "p-1.5 rounded-xl transition-all duration-200 relative", 
                     isActive 
-                      ? "text-primary bg-primary/10 dark:bg-primary/20" 
+                      ? isSellerTab ? "text-orange-500 bg-orange-500/15" : "text-primary bg-primary/10 dark:bg-primary/20" 
+                      : isSellerTab
+                      ? "text-orange-600 bg-orange-50 dark:bg-orange-950/40"
                       : isReferral
                       ? "text-amber-500 bg-amber-50 dark:bg-amber-950/40"
                       : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                   )}>
-                    <tab.icon className={cn("h-5 w-5", isActive && "fill-primary/20")} strokeWidth={isActive ? 2.5 : 2} />
+                    <tab.icon className={cn("h-4.5 w-4.5", isActive && (isSellerTab ? "fill-orange-500/20" : "fill-primary/20"))} strokeWidth={isActive ? 2.5 : 2} />
                     {isReferral && (
                       <span className="absolute -top-1 -right-2 bg-gradient-to-r from-amber-500 to-rose-500 text-white text-[8px] font-black px-1 rounded-full shadow-xs leading-tight">
                         5%
                       </span>
                     )}
+                    {isSellerTab && (
+                      <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[7px] font-black px-1 rounded-full shadow-xs leading-tight">
+                        HUB
+                      </span>
+                    )}
                   </div>
                   <span className={cn(
-                    "text-[10px] font-bold transition-all truncate text-center", 
-                    isActive ? "text-primary" : isReferral ? "text-amber-600 dark:text-amber-400 font-extrabold" : "text-slate-400 dark:text-slate-500"
+                    "text-[9px] font-bold transition-all truncate text-center", 
+                    isActive 
+                      ? isSellerTab ? "text-orange-600 dark:text-orange-400 font-black" : "text-primary" 
+                      : isSellerTab 
+                      ? "text-orange-600 dark:text-orange-400 font-extrabold" 
+                      : isReferral 
+                      ? "text-amber-600 dark:text-amber-400 font-extrabold" 
+                      : "text-slate-400 dark:text-slate-500"
                   )}>
                     {tab.name}
                   </span>
