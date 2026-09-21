@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { PaystackService } from "@/lib/providers/paystack";
+import { awardReferralCommission } from "@/lib/referrals";
 
 export const dynamic = "force-dynamic";
 
@@ -91,7 +92,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Failed to credit wallet balance" }, { status: 500 });
     }
 
-    // 5. Record transaction audit log
+    // 6. Record transaction audit log
     await supabaseAdmin.from("transactions").insert({
       user_id: targetUserId,
       amount: amountNGN,
@@ -107,6 +108,17 @@ export async function GET(req: Request) {
         customer_email: customerEmail,
       },
     });
+
+    // 7. Award 5% referral commission if user was invited by someone
+    try {
+      await awardReferralCommission({
+        refereeUserId: targetUserId,
+        depositAmount: amountNGN,
+        depositReference: cleanRef,
+      });
+    } catch (refErr) {
+      console.error("[Paystack Verify] Referral commission award error:", refErr);
+    }
 
     return NextResponse.json({
       success: true,

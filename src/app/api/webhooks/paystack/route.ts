@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { PaystackService } from "@/lib/providers/paystack";
+import { awardReferralCommission } from "@/lib/referrals";
 
 export const dynamic = "force-dynamic";
 
@@ -112,6 +113,17 @@ export async function POST(req: Request) {
         ip_address: data.ip_address,
       },
     });
+
+    // 7. Award 5% referral commission if user was invited by someone
+    try {
+      await awardReferralCommission({
+        refereeUserId: targetUserId,
+        depositAmount: amountNGN,
+        depositReference: reference,
+      });
+    } catch (refErr) {
+      console.error("[Paystack Webhook] Referral commission award error:", refErr);
+    }
 
     console.log(`[Paystack Webhook] Successfully credited ₦${amountNGN.toLocaleString()} to ${customerEmail}`);
     return NextResponse.json({ success: true, reference, newBalance });

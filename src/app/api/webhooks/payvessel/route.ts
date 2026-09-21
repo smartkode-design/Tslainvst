@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { PayvesselService } from "@/lib/providers/payvessel";
+import { awardReferralCommission } from "@/lib/referrals";
 
 export const dynamic = "force-dynamic";
 
@@ -121,6 +122,17 @@ export async function POST(req: Request) {
         received_at: new Date().toISOString(),
       },
     });
+
+    // 7. Award 5% referral commission if user was invited by someone
+    try {
+      await awardReferralCommission({
+        refereeUserId: profile.id,
+        depositAmount: amount,
+        depositReference: reference,
+      });
+    } catch (refErr) {
+      console.error("[Payvessel Webhook] Referral commission award error:", refErr);
+    }
 
     console.log(`[Payvessel] Credited ₦${amount.toLocaleString()} to ${customerEmail} (New balance: ₦${newBalance.toLocaleString()})`);
     return NextResponse.json({ success: true, reference, newBalance });

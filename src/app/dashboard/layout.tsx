@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Zap, LayoutDashboard, Store, CreditCard, Receipt, Wallet, User, Bell, Search, Settings, HelpCircle, Home, ShoppingBag, LogOut, Shield } from "lucide-react";
+import { Zap, LayoutDashboard, Store, CreditCard, Receipt, Wallet, User, Bell, Search, Settings, HelpCircle, Home, ShoppingBag, LogOut, Shield, Gift } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
@@ -124,6 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { name: "Marketplace", href: "/marketplace", icon: Store },
     { name: "Services", href: "/dashboard/services", icon: Zap },
     { name: "Wallet", href: "/dashboard/wallet", icon: Wallet },
+    { name: "Refer & Earn", href: "/dashboard/referrals", icon: Gift },
     { name: "Transactions", href: "/dashboard/transactions", icon: CreditCard },
     { name: "Orders", href: "/dashboard/orders", icon: Receipt },
   ];

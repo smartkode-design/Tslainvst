@@ -4,15 +4,16 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
-import { ArrowRight, Lock, Mail, User as UserIcon, Phone, ShieldCheck, Zap } from "lucide-react";
+import { ArrowRight, Lock, Mail, User as UserIcon, Phone, ShieldCheck, Zap, Gift, CheckCircle2 } from "lucide-react";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -20,9 +21,48 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [pin, setPin] = useState("");
   
+  // Referral State
+  const [referralCode, setReferralCode] = useState("");
+  const [referrerName, setReferrerName] = useState<string | null>(null);
+  const [isValidatingCode, setIsValidatingCode] = useState(false);
+  const [codeValidStatus, setCodeValidStatus] = useState<"idle" | "valid" | "invalid">("idle");
+  
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    const refParam = searchParams.get("ref");
+    if (refParam) {
+      const clean = refParam.trim().toUpperCase();
+      setReferralCode(clean);
+      validateCode(clean);
+    }
+  }, [searchParams]);
+
+  const validateCode = async (code: string) => {
+    if (!code || !code.trim()) {
+      setCodeValidStatus("idle");
+      setReferrerName(null);
+      return;
+    }
+    setIsValidatingCode(true);
+    try {
+      const res = await fetch(`/api/referrals/validate?code=${encodeURIComponent(code.trim())}`);
+      const data = await res.json();
+      if (data.success && data.referrer) {
+        setCodeValidStatus("valid");
+        setReferrerName(data.referrer.name);
+      } else {
+        setCodeValidStatus("invalid");
+        setReferrerName(null);
+      }
+    } catch {
+      setCodeValidStatus("invalid");
+    } finally {
+      setIsValidatingCode(false);
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +82,23 @@ export default function RegisterPage() {
     setIsLoading(true);
     try {
       const fullName = `${firstName} ${lastName}`.trim();
+      
+      let referredByUserId: string | null = null;
+      let referredByCode: string | null = null;
+
+      if (referralCode.trim()) {
+        try {
+          const res = await fetch(`/api/referrals/validate?code=${encodeURIComponent(referralCode.trim())}`);
+          const valData = await res.json();
+          if (valData.success && valData.referrer) {
+            referredByUserId = valData.referrer.id;
+            referredByCode = valData.referrer.code;
+          }
+        } catch (vErr) {
+          console.warn("Could not validate referral code during registration:", vErr);
+        }
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -51,6 +108,8 @@ export default function RegisterPage() {
             phone: phoneNumber,
             pin: pin || "1234",
             role: "user",
+            referred_by_user_id: referredByUserId,
+            referred_by_code: referredByCode,
           },
         },
       });
@@ -282,6 +341,62 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Section: Referral Code (Optional) */}
+            <div className="space-y-3 pt-1">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className="text-xs font-black tracking-widest text-slate-400 dark:text-slate-500 uppercase">Referral Code (Optional)</span>
+                <span className="text-[10px] font-bold text-primary bg-primary/10 dark:bg-primary/20 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  🎁 5% Bonus Active
+                </span>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="relative">
+                  <Gift className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
+                  <Input 
+                    type="text" 
+                    value={referralCode}
+                    onChange={(e) => {
+                      const val = e.target.value.toUpperCase();
+                      setReferralCode(val);
+                      if (!val) {
+                        setCodeValidStatus("idle");
+                        setReferrerName(null);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (referralCode) validateCode(referralCode);
+                    }}
+                    placeholder="e.g. TSLA-DIVINE-4045" 
+                    className="pl-11 h-12 rounded-xl bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white uppercase font-mono font-bold tracking-wider placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-primary/20 focus-visible:border-primary" 
+                  />
+                  {isValidatingCode && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <span className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full inline-block" />
+                    </div>
+                  )}
+                  {!isValidatingCode && codeValidStatus === "valid" && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                  )}
+                </div>
+
+                {codeValidStatus === "valid" && referrerName && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-2 animate-in fade-in">
+                    <span>✨</span>
+                    <span>Invited by <strong className="underline">{referrerName}</strong>. Your inviter earns 5% commission on your wallet funding!</span>
+                  </div>
+                )}
+
+                {codeValidStatus === "invalid" && (
+                  <p className="text-[11px] font-bold text-rose-500 flex items-center gap-1 animate-in fade-in">
+                    Referral code not found. You can leave this blank or double-check the spelling.
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Action */}
             <div className="pt-2">
               <Button 
@@ -317,5 +432,17 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#080c14]">
+        <div className="animate-pulse text-xs font-bold text-slate-400">Loading registration...</div>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

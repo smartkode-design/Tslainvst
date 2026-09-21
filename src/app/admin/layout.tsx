@@ -24,7 +24,8 @@ import {
   ShieldAlert,
   ExternalLink,
   Menu,
-  X
+  X,
+  Gift
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/ui/logo";
@@ -134,6 +135,7 @@ export default function AdminLayout({
     { name: "Deposits", href: "/admin/deposits", icon: ArrowDownToLine },
     { name: "Withdrawals", href: "/admin/withdrawals", icon: ArrowUpFromLine },
     { name: "Transactions", href: "/admin/transactions", icon: CreditCard },
+    { name: "Referrals", href: "/admin/referrals", icon: Gift },
   ];
   
   const systemItems = [
