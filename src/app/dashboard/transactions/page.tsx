@@ -203,14 +203,16 @@ export default function TransactionsPage() {
                   <div className="flex items-center justify-between sm:justify-end gap-3 pl-14 sm:pl-0">
                     <span
                       className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${
-                        trx.status === "completed"
+                        trx.type === "purchase"
+                          ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+                          : trx.status === "completed"
                           ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                           : trx.status === "pending"
                           ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
                           : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800"
                       }`}
                     >
-                      {trx.status}
+                      {trx.type === "purchase" ? "Paid" : trx.status}
                     </span>
                     <span
                       className={`text-base font-black font-mono ${

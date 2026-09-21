@@ -313,14 +313,16 @@ export default function DashboardOverview() {
                           </span>
                           <span
                             className={`text-[10px] font-bold px-1.5 rounded border capitalize ${
-                              item.status === "completed" || item.status === "success"
+                              item.type === "purchase"
+                                ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border-blue-100 dark:border-blue-900/60"
+                                : item.status === "completed" || item.status === "success"
                                 ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-100 dark:border-emerald-900/60"
                                 : item.status === "pending"
                                 ? "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border-amber-100 dark:border-amber-900/60"
                                 : "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border-red-100 dark:border-red-900/60"
                             }`}
                           >
-                            {item.status}
+                            {item.type === "purchase" ? "Paid" : item.status}
                           </span>
                         </div>
                       </div>

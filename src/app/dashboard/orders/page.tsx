@@ -238,8 +238,16 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100 dark:border-slate-800">
-                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${getStatusStyle(order.status)}`}>
-                      {order.status}
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border flex items-center gap-1.5 ${getStatusStyle(order.status)}`}>
+                      {(order.status === "processing" || order.status === "in_progress") && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse shrink-0"></span>
+                      )}
+                      {order.status === "completed" && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                      )}
+                      {order.status === "processing" || order.status === "in_progress"
+                        ? "Processing (In Queue)"
+                        : order.status}
                     </span>
                     <span className="text-base font-black text-slate-900 dark:text-white font-mono">₦{formatNaira(order.amount_ngn)}</span>
                   </div>
@@ -269,9 +277,14 @@ export default function OrdersPage() {
                               </span>
                             )}
                           </div>
-                          {(order.status === "processing" || order.status === "pending") && (
+                          {(order.status === "processing" || order.status === "pending" || order.status === "in_progress") && (
                             <p className="font-sans text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                              ⚡ Queued with network · Delivery typically commences within 15–60 mins.
+                              ⏳ Status: In Provider Queue · Delivery typically commences within 15–60 mins.
+                            </p>
+                          )}
+                          {order.status === "completed" && (
+                            <p className="font-sans text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                              ✅ Status: Delivery completed successfully by network.
                             </p>
                           )}
                         </div>
