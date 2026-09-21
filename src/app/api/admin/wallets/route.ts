@@ -18,33 +18,40 @@ export interface AdminWalletItem {
 
 export async function GET() {
   try {
-    const { data: wallets, error: wErr } = await supabaseAdmin
-      .from("wallets")
-      .select(`
-        *,
-        profiles:user_id (
-          id,
-          full_name,
-          email,
-          role
-        )
-      `)
-      .order("balance", { ascending: false });
+    const [{ data: profiles, error: pErr }, { data: wallets, error: wErr }] = await Promise.all([
+      supabaseAdmin
+        .from("profiles")
+        .select("id, full_name, email, role, created_at")
+        .order("created_at", { ascending: false }),
+      supabaseAdmin
+        .from("wallets")
+        .select("*")
+        .order("balance", { ascending: false }),
+    ]);
 
+    if (pErr) throw pErr;
     if (wErr) throw wErr;
 
-    const walletList: AdminWalletItem[] = (wallets || []).map((w: any) => ({
-      id: w.id,
-      userId: w.user_id,
-      userName: w.profiles?.full_name || w.profiles?.email?.split("@")[0] || "User",
-      userEmail: w.profiles?.email || "—",
-      balance: Number(w.balance || 0),
-      currency: w.currency || "NGN",
-      payvesselAccount: w.payvessel_account_number || null,
-      bankName: w.bank_name || "Wema Bank",
-      accountName: w.account_name || null,
-      createdAt: w.created_at,
-    }));
+    const walletMap = new Map((wallets || []).map((w: any) => [w.user_id, w]));
+
+    const walletList: AdminWalletItem[] = (profiles || []).map((p: any) => {
+      const w = walletMap.get(p.id);
+      return {
+        id: w?.id || `uninit-${p.id}`,
+        userId: p.id,
+        userName: p.full_name || p.email?.split("@")[0] || "User",
+        userEmail: p.email || "—",
+        balance: Number(w?.balance || 0),
+        currency: w?.currency || "NGN",
+        payvesselAccount: w?.payvessel_account_number || null,
+        bankName: w?.bank_name || "Wema Bank",
+        accountName: w?.account_name || null,
+        createdAt: w?.created_at || p.created_at,
+      };
+    });
+
+    // Sort by balance descending
+    walletList.sort((a, b) => b.balance - a.balance);
 
     const totalFloat = walletList.reduce((sum, w) => sum + w.balance, 0);
     const highestBalance = walletList.length > 0 ? Math.max(...walletList.map((w) => w.balance)) : 0;
@@ -75,15 +82,29 @@ export async function POST(req: Request) {
 
     const numAmount = Number(amount);
 
-    // Fetch existing wallet
-    const { data: wallet, error: wErr } = await supabaseAdmin
+    // Fetch existing wallet or auto-create if missing
+    let { data: wallet } = await supabaseAdmin
       .from("wallets")
       .select("*")
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
-    if (wErr || !wallet) {
-      return NextResponse.json({ success: false, error: "Wallet not found for this user" }, { status: 404 });
+    if (!wallet) {
+      // Auto-create missing wallet row
+      const { data: newWallet, error: createErr } = await supabaseAdmin
+        .from("wallets")
+        .insert({
+          user_id: userId,
+          balance: 0,
+          currency: "NGN",
+        })
+        .select()
+        .single();
+
+      if (createErr) {
+        throw new Error(`Failed to initialize wallet: ${createErr.message}`);
+      }
+      wallet = newWallet;
     }
 
     const currentBalance = Number(wallet.balance || 0);
@@ -101,9 +122,11 @@ export async function POST(req: Request) {
     }
 
     // 1. Update wallet balance
+    // Explicitly include user_id so Postgres WAL includes it in payload.new for Supabase Realtime filters!
     const { error: updateErr } = await supabaseAdmin
       .from("wallets")
       .update({
+        user_id: userId,
         balance: newBalance,
         updated_at: new Date().toISOString(),
       })
@@ -111,7 +134,7 @@ export async function POST(req: Request) {
 
     if (updateErr) throw updateErr;
 
-    // 2. Insert audit transaction
+    // 2. Insert audit transaction (INSERT always emits full row including user_id)
     const txRef = `ADM-${type.toUpperCase()}-${Date.now()}`;
     await supabaseAdmin.from("transactions").insert([
       {

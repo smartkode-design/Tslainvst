@@ -78,7 +78,7 @@ export default function WalletPage() {
     loadData();
   }, [loadData]);
 
-  // Realtime subscription for instant balance & ledger updates
+  // Realtime subscription & mobile tab wake sync for instant balance & ledger updates
   useEffect(() => {
     if (!currentUserId) return;
 
@@ -110,7 +110,25 @@ export default function WalletPage() {
       )
       .subscribe();
 
+    const handleWake = () => {
+      if (document.visibilityState === "visible") {
+        loadData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleWake);
+    window.addEventListener("focus", handleWake);
+
+    const poll = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        loadData();
+      }
+    }, 15000);
+
     return () => {
+      document.removeEventListener("visibilitychange", handleWake);
+      window.removeEventListener("focus", handleWake);
+      clearInterval(poll);
       supabase.removeChannel(channel);
     };
   }, [currentUserId, loadData]);

@@ -21,15 +21,31 @@ export default function SellerDashboard() {
   const [walletBalance, setWalletBalance] = useState(0);
 
   useEffect(() => {
+    let mounted = true;
+    let walletChannel: any = null;
+    let txnChannel: any = null;
+
+    const fetchWalletOnly = async (uid: string) => {
+      const { data: wallet } = await supabase
+        .from("wallets")
+        .select("balance")
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (mounted && wallet && typeof wallet.balance !== "undefined") {
+        setWalletBalance(Number(wallet.balance));
+      }
+    };
+
     const init = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       if (!session) { router.push("/login"); return; }
 
-      setUserId(session.user.id);
+      const uid = session.user.id;
+      setUserId(uid);
 
       // 1. Fetch listings & stats directly from backend API (authoritative role check)
-      const res = await fetch(`/api/seller/listings?userId=${session.user.id}`);
+      const res = await fetch(`/api/seller/listings?userId=${uid}`);
       const data = await res.json();
 
       if (!data.success) {
@@ -37,20 +53,77 @@ export default function SellerDashboard() {
         return;
       }
 
+      if (!mounted) return;
+
       setStats(data.stats || { totalListings: 0, soldListings: 0, availableListings: 0 });
       setRecentListings((data.listings || []).slice(0, 5));
 
       // 2. Fetch wallet balance
-      const { data: wallet } = await supabase
-        .from("wallets")
-        .select("balance")
-        .eq("user_id", session.user.id)
-        .single();
-      setWalletBalance(Number(wallet?.balance || 0));
+      await fetchWalletOnly(uid);
 
       setLoading(false);
+
+      // Realtime wallet listener
+      walletChannel = supabase
+        .channel(`seller-wallet-${uid}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "wallets",
+            filter: `user_id=eq.${uid}`,
+          },
+          (payload: any) => {
+            if (payload.new && typeof payload.new.balance !== "undefined") {
+              setWalletBalance(Number(payload.new.balance));
+            } else {
+              fetchWalletOnly(uid);
+            }
+          }
+        )
+        .subscribe();
+
+      // Realtime transaction listener
+      txnChannel = supabase
+        .channel(`seller-txn-${uid}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "transactions",
+            filter: `user_id=eq.${uid}`,
+          },
+          () => {
+            fetchWalletOnly(uid);
+          }
+        )
+        .subscribe();
     };
+
     init();
+
+    const handleWake = () => {
+      if (document.visibilityState === "visible") {
+        supabase.auth.getSession().then(({ data }) => {
+          if (data?.session?.user?.id) {
+            fetchWalletOnly(data.session.user.id);
+          }
+        });
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleWake);
+    window.addEventListener("focus", handleWake);
+
+    return () => {
+      mounted = false;
+      document.removeEventListener("visibilitychange", handleWake);
+      window.removeEventListener("focus", handleWake);
+      if (walletChannel) supabase.removeChannel(walletChannel);
+      if (txnChannel) supabase.removeChannel(txnChannel);
+    };
   }, [router]);
 
   if (loading) {

@@ -338,12 +338,25 @@ export default function AdminWalletsPage() {
             </div>
 
             <form onSubmit={handleAdjustBalance} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
+              {/* Prominent Target Customer Banner */}
+              <div className="p-3.5 bg-primary/10 rounded-xl border border-primary/20 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-primary block">Crediting / Debiting</span>
+                  <h4 className="font-bold text-sm text-foreground">{selectedWallet.userName}</h4>
+                  <p className="text-xs text-muted-foreground">{selectedWallet.userEmail}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-semibold text-muted-foreground block">Current Balance</span>
+                  <span className="font-mono font-black text-sm text-primary">₦{formatNaira(selectedWallet.balance)}</span>
+                </div>
+              </div>
+
               <div>
                 <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">
-                  Customer
+                  Change Selected Customer
                 </label>
                 <select
-                  className="w-full h-10 px-3 rounded-md bg-background border border-input text-sm"
+                  className="w-full h-10 px-3 rounded-md bg-background border border-input text-sm font-medium"
                   value={selectedWallet.userId}
                   onChange={(e) => {
                     const match = wallets.find((w) => w.userId === e.target.value);
@@ -352,7 +365,7 @@ export default function AdminWalletsPage() {
                 >
                   {wallets.map((w) => (
                     <option key={w.userId} value={w.userId}>
-                      {w.userName} ({w.userEmail}) — Current: ₦{formatNaira(w.balance)}
+                      {w.userName} ({w.userEmail}) — ₦{formatNaira(w.balance)}
                     </option>
                   ))}
                 </select>

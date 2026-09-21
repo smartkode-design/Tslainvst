@@ -45,6 +45,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     let mounted = true;
+    let currentUserId: string | null = null;
+    let walletChannel: any = null;
+    let txnChannel: any = null;
+    let profileChannel: any = null;
+    let pollInterval: any = null;
+
+    async function syncUserData(userId: string) {
+      if (!mounted) return;
+      try {
+        const [{ data: profile }, { data: wallet }] = await Promise.all([
+          supabase.from("profiles").select("id, full_name, email, role").eq("id", userId).maybeSingle(),
+          supabase.from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
+        ]);
+
+        if (!mounted) return;
+
+        if (wallet && typeof wallet.balance !== "undefined") {
+          setAuthCtx((prev) => ({
+            ...prev,
+            wallet: { balance: Number(wallet.balance) },
+          }));
+        }
+
+        if (profile?.role) {
+          setAuthCtx((prev) => ({
+            ...prev,
+            user: prev.user ? { ...prev.user, role: profile.role } : null,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to sync user data:", err);
+      }
+    }
 
     async function loadUser() {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -56,9 +89,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
 
       const userId = session.user.id;
+      currentUserId = userId;
+
       const [{ data: profile }, { data: wallet }] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, email, role").eq("id", userId).single(),
-        supabase.from("wallets").select("balance").eq("user_id", userId).single(),
+        supabase.from("profiles").select("id, full_name, email, role").eq("id", userId).maybeSingle(),
+        supabase.from("wallets").select("balance").eq("user_id", userId).maybeSingle(),
       ]);
 
       if (!mounted) return;
@@ -80,7 +115,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         loading: false,
       });
 
-      // Realtime listener to update wallet balance instantly across the entire dashboard
+      // 1. Realtime listener on wallets table
       walletChannel = supabase
         .channel(`layout-wallet-listener-${userId}`)
         .on(
@@ -97,12 +132,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 ...prev,
                 wallet: { balance: Number(payload.new.balance) },
               }));
+            } else {
+              syncUserData(userId);
             }
           }
         )
         .subscribe();
 
-      // Realtime listener to update profile role instantly when promoted by admin
+      // 2. Realtime listener on transactions table (always fires with user_id on INSERT)
+      txnChannel = supabase
+        .channel(`layout-txn-listener-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "transactions",
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            syncUserData(userId);
+          }
+        )
+        .subscribe();
+
+      // 3. Realtime listener on profiles table (role changes)
       profileChannel = supabase
         .channel(`layout-profile-listener-${userId}`)
         .on(
@@ -125,9 +179,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         .subscribe();
     }
 
-    let walletChannel: any = null;
-    let profileChannel: any = null;
     loadUser();
+
+    // Mobile & tab switching wake sync: re-sync balance and role whenever user returns to tab
+    const handleWakeSync = () => {
+      if (document.visibilityState === "visible" && currentUserId) {
+        syncUserData(currentUserId);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleWakeSync);
+    window.addEventListener("focus", handleWakeSync);
+
+    // 15s gentle polling fallback while tab is active
+    pollInterval = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible" && currentUserId) {
+        syncUserData(currentUserId);
+      }
+    }, 15000);
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) router.replace("/login");
@@ -136,7 +205,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => { 
       mounted = false; 
       listener.subscription.unsubscribe();
+      document.removeEventListener("visibilitychange", handleWakeSync);
+      window.removeEventListener("focus", handleWakeSync);
+      if (pollInterval) clearInterval(pollInterval);
       if (walletChannel) supabase.removeChannel(walletChannel);
+      if (txnChannel) supabase.removeChannel(txnChannel);
       if (profileChannel) supabase.removeChannel(profileChannel);
     };
   }, [router]);
