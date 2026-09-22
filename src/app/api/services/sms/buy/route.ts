@@ -90,7 +90,11 @@ export async function POST(req: Request) {
     const newBalance = Number((currentBalance - authoritativePrice).toFixed(2));
     const { error: debitErr } = await supabaseAdmin
       .from("wallets")
-      .update({ balance: newBalance, updated_at: new Date().toISOString() })
+      .update({
+        user_id: authenticatedUserId,
+        balance: newBalance,
+        updated_at: new Date().toISOString()
+      })
       .eq("id", wallet.id)
       .gte("balance", authoritativePrice);
 
@@ -101,22 +105,30 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5. Call 5SIM API to acquire number
+    // 5. Call 5SIM API to acquire number with strict Wholesale Margin Guard
+    // We target the lowest-cost operator and ensure wholesale USD never exceeds retail income
+    const maxWholesaleUSD = Number(((authoritativePrice * 0.90) / 1650).toFixed(2));
     let fiveSimOrder;
     try {
-      fiveSimOrder = await FiveSimService.buyNumber(country, "any", service);
+      fiveSimOrder = await FiveSimService.buyNumber(country, "any", service, maxWholesaleUSD);
     } catch (apiError: any) {
-      // CRITICAL: Rollback user wallet if provider fails!
+      // CRITICAL: Rollback user wallet if provider fails or if route is loss-making!
       console.error("5SIM API call failed, rolling back wallet balance:", apiError);
       await supabaseAdmin
         .from("wallets")
-        .update({ balance: currentBalance, updated_at: new Date().toISOString() })
+        .update({
+          user_id: authenticatedUserId,
+          balance: currentBalance,
+          updated_at: new Date().toISOString()
+        })
         .eq("id", wallet.id);
 
       const rawMsg = String(apiError?.message || "");
       let userFriendlyMessage = "This carrier route is temporarily unavailable or out of stock. Please select another country or try again shortly.";
 
-      if (rawMsg.toLowerCase().includes("no free phones") || rawMsg.toLowerCase().includes("out of stock")) {
+      if (rawMsg.toLowerCase().includes("elevated") || rawMsg.toLowerCase().includes("protect against loss")) {
+        userFriendlyMessage = "Low-cost carrier lines for this route are temporarily out of stock. Please select another country (e.g. UK +44) or try again shortly.";
+      } else if (rawMsg.toLowerCase().includes("no free phones") || rawMsg.toLowerCase().includes("out of stock")) {
         userFriendlyMessage = "Numbers for this service are temporarily out of stock in this region. Please try another country or check back soon.";
       } else if (rawMsg.toLowerCase().includes("not enough") || rawMsg.toLowerCase().includes("balance") || rawMsg.toLowerCase().includes("limit")) {
         userFriendlyMessage = "This carrier route is temporarily unavailable for allocation. Please select a different country or try again shortly.";
