@@ -118,7 +118,11 @@ export async function GET(req: Request) {
               const refundBal = Number((Number(wallet.balance) + Number(order.amount_ngn)).toFixed(2));
               await supabaseAdmin
                 .from("wallets")
-                .update({ balance: refundBal, updated_at: new Date().toISOString() })
+                .update({
+                  user_id: order.user_id,
+                  balance: refundBal,
+                  updated_at: new Date().toISOString()
+                })
                 .eq("id", wallet.id);
 
               await supabaseAdmin.from("transactions").insert({
@@ -171,5 +175,111 @@ export async function GET(req: Request) {
   } catch (error: any) {
     console.error("Public order API error:", error);
     return NextResponse.json({ error: error.message || "Failed to load verification order" }, { status: 500 });
+  }
+}
+
+/**
+ * POST handler to allow customer/client to cancel a line (e.g. number banned on Telegram/WhatsApp)
+ * Instantly triggers 5SIM ban/cancellation and refunds 100% of funds back into the vendor's wallet.
+ */
+export async function POST(req: Request) {
+  try {
+    const { token, reason } = await req.json();
+
+    if (!token) {
+      return NextResponse.json({ error: "Missing verification token" }, { status: 400 });
+    }
+
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
+    let query = supabaseAdmin
+      .from("orders")
+      .select("id, user_id, provider_order_id, service_name, target, details, status, amount_ngn")
+      .eq("service_type", "sms");
+
+    if (isUUID) {
+      query = query.eq("id", token);
+    } else {
+      query = query.eq("provider_order_id", token);
+    }
+
+    const { data: order, error: orderErr } = await query.maybeSingle();
+
+    if (orderErr || !order) {
+      return NextResponse.json({ error: "Verification session not found or link has expired." }, { status: 404 });
+    }
+
+    if (order.status === "completed") {
+      return NextResponse.json({ error: "Verification code was already delivered. Completed orders cannot be canceled." }, { status: 400 });
+    }
+
+    if (order.status === "refunded" || order.status === "canceled") {
+      return NextResponse.json({ success: true, message: "Line is already canceled and refunded." });
+    }
+
+    // 1. Cancel / Ban order on 5SIM
+    if (order.provider_order_id) {
+      try {
+        await FiveSimService.banOrder(order.provider_order_id);
+      } catch (e: any) {
+        console.warn("5SIM cancel/ban call warning:", e.message);
+      }
+    }
+
+    // 2. Refund vendor wallet 100%
+    const { data: wallet } = await supabaseAdmin
+      .from("wallets")
+      .select("id, balance")
+      .eq("user_id", order.user_id)
+      .maybeSingle();
+
+    const refundAmount = Number(order.amount_ngn || 0);
+
+    if (wallet) {
+      const newBal = Number((Number(wallet.balance) + refundAmount).toFixed(2));
+      await supabaseAdmin
+        .from("wallets")
+        .update({
+          user_id: order.user_id,
+          balance: newBal,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", wallet.id);
+
+      await supabaseAdmin.from("transactions").insert({
+        user_id: order.user_id,
+        amount: refundAmount,
+        type: "refund",
+        status: "completed",
+        reference: `REF_BANNED_${order.id.slice(0, 8)}_${Date.now()}`,
+        description: `Auto-Refund: Customer reported number banned for ${order.service_name} (${order.target})`,
+        metadata: {
+          order_id: order.id,
+          reason: reason || "Customer reported number banned",
+          phone: order.target,
+        },
+      });
+    }
+
+    // 3. Update order in database
+    await supabaseAdmin
+      .from("orders")
+      .update({
+        status: "refunded",
+        details: {
+          ...((order.details as Record<string, any>) || {}),
+          cancel_reason: reason || "Customer reported number banned on service",
+          canceled_at: new Date().toISOString(),
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", order.id);
+
+    return NextResponse.json({
+      success: true,
+      message: "Line canceled and full refund returned to vendor's wallet.",
+    });
+  } catch (err: any) {
+    console.error("Public cancel error:", err);
+    return NextResponse.json({ error: err.message || "Failed to cancel line" }, { status: 500 });
   }
 }

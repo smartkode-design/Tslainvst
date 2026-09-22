@@ -66,6 +66,40 @@ export default function OrdersPage() {
   const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancelingOrderId, setCancelingOrderId] = useState<string | null>(null);
+
+  const handleCancelSmsOrder = async (orderId: string) => {
+    if (!confirm("Are you sure you want to cancel this line? 100% of the funds will be refunded back to your wallet immediately.")) {
+      return;
+    }
+    setCancelingOrderId(orderId);
+    try {
+      const res = await fetch("/api/services/sms/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, reason: "Vendor canceled line" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message || "Order canceled and full amount refunded to your wallet!");
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session) {
+          const { data: refreshed } = await supabase
+            .from("orders")
+            .select("*")
+            .eq("user_id", sessionData.session.user.id)
+            .order("created_at", { ascending: false });
+          if (refreshed) setOrders(refreshed);
+        }
+      } else {
+        alert(data.error || "Failed to cancel order");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to cancel order");
+    } finally {
+      setCancelingOrderId(null);
+    }
+  };
 
   useEffect(() => {
     async function fetchOrders() {
@@ -299,31 +333,57 @@ export default function OrdersPage() {
                     </div>
 
                     {order.service_type === "sms" && (
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <Link href={`/verify/${order.id}`} target="_blank">
-                          <Button 
+                      <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                        {order.status !== "refunded" && order.status !== "canceled" && (
+                          <Link href={`/verify/${order.id}`} target="_blank">
+                            <Button 
+                              size="sm"
+                              variant="outline"
+                              className="h-8 px-2.5 rounded-xl text-[11px] font-bold shrink-0 bg-white dark:bg-slate-800 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center gap-1"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              <span>Client Portal</span>
+                            </Button>
+                          </Link>
+                        )}
+                        {order.status !== "refunded" && order.status !== "canceled" && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const url = `${window.location.origin}/verify/${order.id}`;
+                              navigator.clipboard.writeText(url);
+                              setCopiedOrderId(order.id);
+                              setTimeout(() => setCopiedOrderId(null), 2000);
+                            }}
+                            className="h-8 px-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            title="Copy Link for Client"
+                          >
+                            {copiedOrderId === order.id ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                          </Button>
+                        )}
+                        {(order.status === "pending" || order.status === "processing" || order.status === "in_progress") && (
+                          <Button
                             size="sm"
                             variant="outline"
-                            className="h-8 px-2.5 rounded-xl text-[11px] font-bold shrink-0 bg-white dark:bg-slate-800 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 flex items-center gap-1"
+                            disabled={cancelingOrderId === order.id}
+                            onClick={() => handleCancelSmsOrder(order.id)}
+                            className="h-8 px-2.5 rounded-xl text-[11px] font-bold shrink-0 border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-1"
+                            title="Cancel line and refund 100% to wallet"
                           >
-                            <ExternalLink className="h-3 w-3" />
-                            <span>Client Portal</span>
+                            <span>{cancelingOrderId === order.id ? "Canceling..." : "Cancel & Refund"}</span>
                           </Button>
-                        </Link>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            const url = `${window.location.origin}/verify/${order.id}`;
-                            navigator.clipboard.writeText(url);
-                            setCopiedOrderId(order.id);
-                            setTimeout(() => setCopiedOrderId(null), 2000);
-                          }}
-                          className="h-8 px-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                          title="Copy Link for Client"
-                        >
-                          {copiedOrderId === order.id ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
-                        </Button>
+                        )}
+                        {order.status === "refunded" && (
+                          <Link href="/dashboard/services/virtual-no">
+                            <Button
+                              size="sm"
+                              className="h-8 px-2.5 rounded-xl text-[11px] font-bold shrink-0 bg-primary hover:bg-primary/90 text-white flex items-center gap-1"
+                            >
+                              <span>Get New Number</span>
+                            </Button>
+                          </Link>
+                        )}
                       </div>
                     )}
 

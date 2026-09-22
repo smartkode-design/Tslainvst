@@ -6,32 +6,49 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const { orderId } = await req.json();
+    const { orderId, reason } = await req.json();
 
     if (!orderId) {
       return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
     }
 
-    // 1. Fetch order from Supabase
-    const { data: order, error: orderErr } = await supabaseAdmin
+    // 1. Fetch order from Supabase by UUID (id) OR provider_order_id
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(orderId));
+    let query = supabaseAdmin
       .from("orders")
-      .select("id, user_id, amount_ngn, status")
-      .eq("provider_order_id", String(orderId))
-      .single();
+      .select("id, user_id, provider_order_id, service_name, target, details, amount_ngn, status")
+      .eq("service_type", "sms");
+
+    if (isUUID) {
+      query = query.eq("id", String(orderId));
+    } else {
+      query = query.eq("provider_order_id", String(orderId));
+    }
+
+    const { data: order, error: orderErr } = await query.maybeSingle();
 
     if (orderErr || !order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    if (order.status === "refunded") {
+    if (order.status === "refunded" || order.status === "canceled") {
       return NextResponse.json({ success: true, message: "Order is already refunded" });
     }
 
+    if (order.status === "completed") {
+      return NextResponse.json({ error: "Completed orders with delivered SMS cannot be refunded" }, { status: 400 });
+    }
+
     // 2. Cancel order on 5SIM if provider is 5sim
+    const pId = order.provider_order_id || String(orderId);
     try {
-      await FiveSimService.cancelOrder(orderId);
+      if (reason === "banned") {
+        await FiveSimService.banOrder(pId);
+      } else {
+        await FiveSimService.cancelOrder(pId);
+      }
     } catch (e: any) {
-      console.warn("5SIM cancel call warning:", e.message);
+      console.warn("5SIM cancel/ban call warning:", e.message);
     }
 
     // 3. Refund user wallet in Supabase
@@ -39,7 +56,7 @@ export async function POST(req: Request) {
       .from("wallets")
       .select("id, balance")
       .eq("user_id", order.user_id)
-      .single();
+      .maybeSingle();
 
     if (wallet) {
       const refundAmount = Number(order.amount_ngn || 0);
@@ -47,12 +64,24 @@ export async function POST(req: Request) {
 
       await supabaseAdmin
         .from("wallets")
-        .update({ balance: newBalance, updated_at: new Date().toISOString() })
+        .update({
+          user_id: order.user_id,
+          balance: newBalance,
+          updated_at: new Date().toISOString()
+        })
         .eq("id", wallet.id);
 
       await supabaseAdmin
         .from("orders")
-        .update({ status: "refunded", updated_at: new Date().toISOString() })
+        .update({
+          status: "refunded",
+          details: {
+            ...((order.details as Record<string, any>) || {}),
+            cancel_reason: reason || "Manual cancellation",
+            canceled_at: new Date().toISOString(),
+          },
+          updated_at: new Date().toISOString()
+        })
         .eq("id", order.id);
 
       await supabaseAdmin.from("transactions").insert({
@@ -60,13 +89,18 @@ export async function POST(req: Request) {
         amount: refundAmount,
         type: "refund",
         status: "completed",
-        reference: "REF_" + orderId + "_" + Date.now(),
-        description: "Manual cancellation refund for Virtual Number Order #" + orderId,
+        reference: "REF_" + (order.provider_order_id || order.id.slice(0, 8)) + "_" + Date.now(),
+        description: `Manual cancellation refund for Virtual Line (${order.service_name || "SMS"}): ${order.target || ""}`,
+        metadata: {
+          order_id: order.id,
+          reason: reason || "Vendor manual cancellation",
+          phone: order.target,
+        },
       });
 
       return NextResponse.json({
         success: true,
-        message: "Order #" + orderId + " canceled. ₦" + refundAmount.toLocaleString() + " has been refunded to your wallet.",
+        message: `Order canceled. ₦${refundAmount.toLocaleString()} has been refunded to your wallet.`,
         newBalance,
       });
     }

@@ -41,6 +41,8 @@ export default function PublicVerifyPage() {
   const [copiedNumber, setCopiedNumber] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const [countdown, setCountdown] = useState<number>(0);
+  const [isCanceling, setIsCanceling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   // Fetch status
   const pollOrder = useCallback(async () => {
@@ -64,6 +66,28 @@ export default function PublicVerifyPage() {
       console.error("Poll error:", err);
     }
   }, [token]);
+
+  const handleReportBanned = async () => {
+    setIsCanceling(true);
+    try {
+      const res = await fetch(`/api/services/sms/public-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, reason: "Customer reported number banned" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowCancelModal(false);
+        await pollOrder();
+      } else {
+        alert(data.error || "Failed to cancel line");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to cancel line");
+    } finally {
+      setIsCanceling(false);
+    }
+  };
 
   // Initial load
   useEffect(() => {
@@ -243,6 +267,28 @@ export default function PublicVerifyPage() {
                 <span>Tap <strong>Send SMS / Verify</strong> and keep this page open.</span>
               </div>
             </div>
+
+            {/* Banned Number Helper */}
+            <div className="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+              <div>
+                <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <AlertCircle className="h-4 w-4 text-amber-400 shrink-0" />
+                  App says number is banned?
+                </h4>
+                <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                  If {serviceInfo.name} blocked this number, cancel now. Your vendor receives an instant 100% refund so they can issue you a replacement number.
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={isCanceling}
+                onClick={() => setShowCancelModal(true)}
+                className="rounded-xl text-xs font-bold bg-rose-600/90 hover:bg-rose-600 text-white shrink-0 self-start sm:self-auto h-9"
+              >
+                Report Banned / Cancel
+              </Button>
+            </div>
           </div>
         )}
 
@@ -282,14 +328,61 @@ export default function PublicVerifyPage() {
 
         {/* CANCELED OR TIMED OUT */}
         {isCanceled && (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-7 text-center space-y-3">
-            <div className="h-12 w-12 rounded-2xl bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
-              <Clock className="h-6 w-6" />
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-7 text-center space-y-4">
+            <div className="h-14 w-14 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center mx-auto">
+              <AlertCircle className="h-7 w-7" />
             </div>
-            <h3 className="text-base font-black text-white">Verification Window Closed</h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-              No code was received within the 20-minute window. The carrier line has been released and the vendor has been refunded.
-            </p>
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-white">Line Canceled & Vendor Refunded</h3>
+              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                This number has been released and your vendor was issued an instant 100% refund in their TSLA wallet balance.
+              </p>
+            </div>
+            <div className="p-4 bg-slate-950/80 rounded-2xl border border-slate-800 text-left text-xs space-y-2 text-slate-300">
+              <p className="font-bold text-white flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                No Money Lost · Guaranteed
+              </p>
+              <p className="text-slate-400 text-[11px] leading-relaxed">
+                Please contact your vendor to request a fresh number. (Tip: For Telegram, asking for UK, Netherlands, South Africa, or Brazil gives the cleanest success rate!)
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: REPORT BANNED / CANCEL CONFIRMATION */}
+        {showCancelModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl animate-in zoom-in-95">
+              <div className="h-12 w-12 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto">
+                <AlertCircle className="h-6 w-6" />
+              </div>
+              <div className="text-center space-y-1">
+                <h3 className="text-base font-bold text-white">Cancel & Refund Vendor?</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Does {serviceInfo.name} show this number is banned? Canceling will immediately refund your vendor 100% of their money so they can generate a replacement line for you.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isCanceling}
+                  onClick={() => setShowCancelModal(false)}
+                  className="rounded-xl border-slate-700 text-slate-300 hover:bg-slate-800"
+                >
+                  Go Back
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={isCanceling}
+                  onClick={handleReportBanned}
+                  className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold"
+                >
+                  {isCanceling ? <RefreshCw className="h-4 w-4 animate-spin" /> : "Confirm Cancel"}
+                </Button>
+              </div>
+            </div>
           </div>
         )}
 

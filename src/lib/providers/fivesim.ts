@@ -177,6 +177,33 @@ export class FiveSimService {
   }
 
   /**
+   * Ban order on 5SIM if number was blocked/banned by the service (e.g. Telegram)
+   */
+  static async banOrder(orderId: number | string): Promise<FiveSimOrder> {
+    if (!this.token) {
+      return {
+        id: Number(orderId),
+        phone: "",
+        operator: "any",
+        product: "telegram",
+        price: 0.9,
+        status: "BANNED",
+        expires: new Date().toISOString(),
+        sms: [],
+        country: "usa",
+        created_at: new Date().toISOString(),
+      };
+    }
+
+    try {
+      return await this.request<FiveSimOrder>(`/user/ban/${orderId}`);
+    } catch {
+      // Fallback to cancel if ban endpoint has any specific provider constraint
+      return this.request<FiveSimOrder>(`/user/cancel/${orderId}`);
+    }
+  }
+
+  /**
    * Mark order as finished once OTP has been used
    */
   static async finishOrder(orderId: number | string): Promise<FiveSimOrder> {

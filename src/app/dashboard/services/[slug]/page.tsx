@@ -1367,6 +1367,19 @@ export default function ServicePage({ params }: { params: { slug: string } }) {
             })}
           </div>
 
+          {/* Telegram Carrier Notice */}
+          {selectedOtpService === "telegram" && (
+            <div className="p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/25 text-sky-800 dark:text-sky-300 text-xs space-y-1">
+              <div className="flex items-center gap-1.5 font-bold">
+                <Info className="h-4 w-4 text-sky-500 shrink-0" />
+                <span>Telegram Routing Recommendation</span>
+              </div>
+              <p className="text-[11px] text-sky-700/90 dark:text-sky-300/80 leading-relaxed">
+                Telegram aggressively flags recycled US (+1) numbers as banned. For the highest success rate on Telegram, we recommend selecting <strong>United Kingdom (+44)</strong>, <strong>Netherlands (+31)</strong>, <strong>South Africa (+27)</strong>, or <strong>Brazil (+55)</strong>. If any carrier line is ever flagged, cancel it immediately for a full 100% refund.
+              </p>
+            </div>
+          )}
+
           {/* Action trigger */}
           <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
             {smsError && (
