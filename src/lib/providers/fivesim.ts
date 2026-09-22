@@ -206,10 +206,27 @@ export class FiveSimService {
       }
     }
 
-    // Direct operator request or fallback
-    return this.request<FiveSimOrder>(
+    // Direct operator request or fallback to 5SIM any operator pool
+    const directOrder = await this.request<FiveSimOrder>(
       `/user/buy/activation/${targetCountry}/${operator.toLowerCase()}/${targetService}`
     );
+
+    // If maxWholesaleUSD is enforced, verify the allocated price immediately!
+    if (maxWholesaleUSD && directOrder.price > maxWholesaleUSD) {
+      console.warn(
+        `Order ${directOrder.id} allocated at $${directOrder.price} exceeding margin cap ($${maxWholesaleUSD}). Cancelling on 5SIM immediately.`
+      );
+      try {
+        await this.cancelOrder(directOrder.id);
+      } catch (cancelErr: any) {
+        console.warn("Failed to auto-cancel overpriced line on 5SIM:", cancelErr.message);
+      }
+      throw new Error(
+        `Wholesale rate for ${targetCountry.toUpperCase()} ${targetService.toUpperCase()} is elevated ($${directOrder.price.toFixed(2)}). Order stopped to protect against loss.`
+      );
+    }
+
+    return directOrder;
   }
 
   /**
